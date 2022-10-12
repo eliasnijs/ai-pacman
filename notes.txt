@@ -1,0 +1,7 @@
+    
+    notes.txt
+
+    (resources)
+    -  pacman in c       https://github.com/MarquisdeGeek/pacman/tree/master/src
+    -  nc examples       https://github.com/zephyrproject-rtos/windows-curses/tree/master/examples
+    -  ghost mechanics   https://youtu.be/ataGotQ7ir8
