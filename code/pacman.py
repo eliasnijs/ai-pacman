@@ -3,15 +3,13 @@ from enum import Enum
 from random import randint
 import time
 
-import curses
-from curses import wrapper
-
+import curses as c
 
 # ======================================================= #
 """
 TODO(Elias):
-- detect keystrokes with ncurses
-- render with ncurses
+- detect keystrokes with nc
+- render with nc
 - normal food stuff
 - power pellets
 - more advanced map loading (for example map positions)
@@ -20,8 +18,8 @@ NOTE(Elias):
 Resources:
 - pacman in c:
     https://github.com/MarquisdeGeek/pacman/tree/master/src
-- ncurses examples: 
-    https://github.com/zephyrproject-rtos/windows-curses/tree/master/examples
+- nc examples: 
+    https://github.com/zephyrproject-rtos/windows-c/tree/master/examples
 - ghost mechanics:
     https://youtu.be/ataGotQ7ir8
 """
@@ -42,9 +40,14 @@ class vec2:
 # NOTE(Elias): Game Structs 
 
 @dataclass
-class Actor:
+class Body:
     pos:vec2
     dir:vec2
+
+@dataclass
+class Ghost:
+    body:Body
+    color:int
 
 @dataclass
 class Game:
@@ -53,8 +56,8 @@ class Game:
     w:int
     h:int
     tiles:list[str]
-    pacman:Actor
-    ghosts:Actor
+    pacman:Body
+    ghosts:list[Ghost]
 
 class Tiles(Enum):
     EMPTY:str = ' '
@@ -65,6 +68,20 @@ class Tiles(Enum):
 
 def clamp(lb, v, ub):
     return min(max(lb, v), ub)
+
+# =======================================================
+# NOTE(Elias): c Helper Functions
+
+def set_color(win, fg, bg):
+    if c.has_colors():
+        n = fg + 1
+        c.init_pair(n, fg, bg)
+        win.attroff(c.A_COLOR)
+        win.attron(c.color_pair(n))
+
+def unset_color(win):
+    if c.has_colors():
+        win.attrset(c.color_pair(0))
 
 # =======================================================
 # NOTE(Elias): Helper Functions
@@ -85,20 +102,30 @@ def game_update(game:Game) -> None:
         game.pacman.pos = pn
 
     for ghost in game.ghosts:
-        pn = ghost.pos + ghost.dir
+        pn = ghost.body.pos + ghost.body.dir
         while game.tiles[pn.y][pn.x] != Tiles.EMPTY.value:
-            ghost.dir = rand_dir()
-            pn = ghost.pos + ghost.dir
-        ghost.pos = pn 
-        if ghost.pos == game.pacman.pos:
+            ghost.body.dir = rand_dir()
+            pn = ghost.body.pos + ghost.body.dir
+        ghost.body.pos = pn 
+        if ghost.body.pos == game.pacman.pos:
             game.running = False 
 
 def game_render(stdscr, game:Game) -> None:
+    set_color(stdscr, c.COLOR_BLUE, c.COLOR_BLACK)
     for i, row in enumerate(game.tiles):
         stdscr.addstr(i, 0, ' '.join(row))
-    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x*2, 'P')
+    
+    set_color(stdscr, c.COLOR_YELLOW, c.COLOR_BLACK)
+    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x*2, '>')
+    
     for ghost in game.ghosts:
-        stdscr.addstr(ghost.pos.y, ghost.pos.x*2, 'G')
+        set_color(stdscr, ghost.color, c.COLOR_BLACK)
+        stdscr.addstr(ghost.body.pos.y, ghost.body.pos.x*2, 'M')
+    
+    unset_color(stdscr)
+    stdscr.addstr(0, (game.w + 1)*2, f"STATS")
+    stdscr.addstr(2, (game.w + 1)*2, f"score: {game.score}")
+    
     stdscr.refresh()
 
 # =======================================================
@@ -107,14 +134,13 @@ def game_render(stdscr, game:Game) -> None:
 FPS = 33
 
 def main(stdscr) -> None:
-
     tiles = loadmap("map.txt")
-    pacman = Actor(vec2(1, 1), vec2(1, 0))
+    pacman = Body(vec2(1, 1), vec2(1, 0))
     ghosts = [
-        Actor(vec2(1, 0), vec2(1, 0)),
-        Actor(vec2(10, 0), vec2(-1, 0)),
-        Actor(vec2(2, 10), vec2(1, 0)),
-        Actor(vec2(3, 2), vec2(1, 0)),
+        Ghost(Body(vec2(1, 0), vec2(1, 0)), c.COLOR_RED),
+        Ghost(Body(vec2(10, 0), vec2(-1, 0)), c.COLOR_CYAN),
+        Ghost(Body(vec2(2, 10), vec2(1, 0)), c.COLOR_MAGENTA),
+        Ghost(Body(vec2(3, 2), vec2(1, 0)), c.COLOR_GREEN),
         ]
 
     game:Game = Game(True, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
@@ -131,16 +157,15 @@ def main(stdscr) -> None:
             # NOTE(Elias): Is sleep the correct way of doing this?
             # There might be a problem with interrupt signals?
             time.sleep(wait_t/10e9) 
+        stdscr.getkey()
 
-    stdscr.getkey()
-    stdscr.clear()
-    stdscr.addstr(0,0,"You got eaten! :(")
-    stdscr.addstr(1,0,f"Your score was: {game.score}")
+    stdscr.addstr(8, game.w*2 + 2, f"You got eaten! :(")
+    stdscr.refresh()
     stdscr.getkey()
 
 
 # ======================================================= #
-# NOTE(Elias): start curses application #
+# NOTE(Elias): start c application #
 
 print("Ai-Pacman (c) Bavo Verstraeten, Elias Nijs")
-wrapper(main)
+c.wrapper(main)
