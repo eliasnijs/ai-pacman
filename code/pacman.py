@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from random import randint
-from time import sleep
+import time
 
 import curses
 from curses import wrapper
@@ -15,6 +15,15 @@ TODO(Elias):
 - normal food stuff
 - power pellets
 - more advanced map loading (for example map positions)
+
+NOTE(Elias):
+Resources:
+- pacman in c:
+    https://github.com/MarquisdeGeek/pacman/tree/master/src
+- ncurses examples: 
+    https://github.com/zephyrproject-rtos/windows-curses/tree/master/examples
+- ghost mechanics:
+    https://youtu.be/ataGotQ7ir8
 """
 
 # ======================================================= #
@@ -95,6 +104,8 @@ def game_render(stdscr, game:Game) -> None:
 # =======================================================
 # NOTE(Elias): Main
 
+FPS = 33
+
 def main(stdscr) -> None:
 
     tiles = loadmap("map.txt")
@@ -108,13 +119,23 @@ def main(stdscr) -> None:
 
     game:Game = Game(True, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
 
-
-
+    nspf = (1/FPS)*10e9
 
     while (game.running):
+        start_t = time.perf_counter_ns()
         game_update(game)
         game_render(stdscr, game)
-        sleep(0.33)
+        end_t = time.perf_counter_ns()
+        wait_t = nspf - (end_t - start_t)
+        if (wait_t > 0):
+            # NOTE(Elias): Is sleep the correct way of doing this?
+            # There might be a problem with interrupt signals?
+            time.sleep(wait_t/10e9) 
+
+    stdscr.getkey()
+    stdscr.clear()
+    stdscr.addstr(0,0,"You got eaten! :(")
+    stdscr.addstr(1,0,f"Your score was: {game.score}")
     stdscr.getkey()
 
 
