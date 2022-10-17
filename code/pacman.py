@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from enum import Enum
+from nis import match
 from random import randint
 import time
 
-import curses as c
+import curses as curses
 
 # ======================================================= #
 """
@@ -56,7 +57,7 @@ class Game:
     pacman:Body
     ghosts:list[Ghost]
 
-FPS = 33
+FPS = 15
 DIRS = [vec2(0,1), vec2(1, 0), vec2(0,-1), vec2(-1,0)]
 
 
@@ -70,15 +71,15 @@ def clamp(lb, v, ub):
 # NOTE(Elias): c Helper Functions
 
 def set_color(win, fg, bg):
-    if c.has_colors():
+    if curses.has_colors():
         n = fg + 1
-        c.init_pair(n, fg, bg)
-        win.attroff(c.A_COLOR)
-        win.attron(c.color_pair(n))
+        curses.init_pair(n, fg, bg)
+        win.attroff(curses.A_COLOR)
+        win.attron(curses.color_pair(n))
 
 def unset_color(win):
-    if c.has_colors():
-        win.attrset(c.color_pair(0))
+    if curses.has_colors():
+        win.attrset(curses.color_pair(0))
 
 # =======================================================
 # NOTE(Elias): Helper Functions
@@ -93,14 +94,6 @@ def rand_dir() -> vec2:
 # NOTE(Elias): Game
     
 def game_update(game:Game, input) -> None:
-    # NOTE(Elias): Handle keyboard input 
-    match input:
-        case "W": game.pacman.dir = DIRS[0]
-        case "D": game.pacman.dir = DIRS[1]
-        case "D": game.pacman.dir = DIRS[2]
-        case "D": game.pacman.dir = DIRS[3]
-        case "Q": game.running = False
-
     # NOTE(Elias): Update pacman
     pn = game.pacman.pos + game.pacman.dir
     if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
@@ -124,15 +117,15 @@ def game_update(game:Game, input) -> None:
             game.running = False
 
 def game_render(stdscr, game:Game) -> None:
-    set_color(stdscr, c.COLOR_BLUE, c.COLOR_BLACK)
+    set_color(stdscr, curses.COLOR_BLUE, curses.COLOR_BLACK)
     for i, row in enumerate(game.tiles):
         stdscr.addstr(i, 0, ' '.join(row))
     
-    set_color(stdscr, c.COLOR_YELLOW, c.COLOR_BLACK)
-    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x*2, 'W')
+    set_color(stdscr, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x*2, 'Q')
     
     for ghost in game.ghosts:
-        set_color(stdscr, ghost.color, c.COLOR_BLACK)
+        set_color(stdscr, ghost.color, curses.COLOR_BLACK)
         stdscr.addstr(ghost.body.pos.y, ghost.body.pos.x*2, 'M')
     
     unset_color(stdscr)
@@ -144,22 +137,40 @@ def game_render(stdscr, game:Game) -> None:
 # =======================================================
 # NOTE(Elias): Main
 
+def handlekeys(game:Game, key:int) -> None:
+    if key == ord('w'): 
+        game.pacman.dir = DIRS[0]
+    elif key == ord('d'): 
+        game.pacman.dir = DIRS[1]
+    elif key == ord('s'): 
+        game.pacman.dir = DIRS[2]
+    elif key == ord('a'): 
+        game.pacman.dir = DIRS[3]
+
 def pacman(stdscr) -> None:
+
     tiles = loadmap("map.txt")
     pacman = Body(vec2(1, 1), vec2(1, 0))
     ghosts = [
-        Ghost(Body(vec2(1, 0),  vec2(1, 0)),  c.COLOR_RED),
-        Ghost(Body(vec2(10, 0), vec2(-1, 0)), c.COLOR_CYAN),
-        Ghost(Body(vec2(2, 10), vec2(1, 0)),  c.COLOR_MAGENTA),
-        Ghost(Body(vec2(3, 2),  vec2(1, 0)),  c.COLOR_GREEN),
+        # Ghost(Body(vec2(1, 0),  vec2(1, 0)),  curses.COLOR_RED),
+        # Ghost(Body(vec2(10, 0), vec2(-1, 0)), curses.COLOR_CYAN),
+        # Ghost(Body(vec2(2, 10), vec2(1, 0)),  curses.COLOR_MAGENTA),
+        # Ghost(Body(vec2(3, 2),  vec2(1, 0)),  curses.COLOR_GREEN),
         ]
 
     game:Game = Game(True, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
 
     nspf = (1/FPS)*10e9
 
+    stdscr.nodelay(True)    
+
     while (game.running):
         start_t = time.perf_counter_ns()
+        key = stdscr.getch()
+        if key == ord('q'):
+            break
+        else: 
+            handlekeys(game, key)
         game_update(game, None)
         game_render(stdscr, game)
         end_t = time.perf_counter_ns()
@@ -168,16 +179,8 @@ def pacman(stdscr) -> None:
             # NOTE(Elias): Is sleep the correct way of doing this?
             # There might be a problem with interrupt signals?
             time.sleep(wait_t/10e9) 
-        stdscr.getkey()
-
-    stdscr.refresh()
-    stdscr.getkey()
-
-def keyboard():
-    pass
-
 
 # ======================================================= #
 # NOTE(Elias): start application #
 
-c.wrapper(pacman)
+curses.wrapper(pacman)
