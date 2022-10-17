@@ -10,7 +10,7 @@
     -  ghosts can only switch direction when encountering a wall at the moment 
     -  power pellet implementation
     -  food implementation
-    -  expand maploader with start locations
+    V  expand maploader with start locations [Bavo]
     -  score counter
     -  track statistics (import for ai)
     

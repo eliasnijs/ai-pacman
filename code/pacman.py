@@ -84,8 +84,31 @@ def unset_color(win):
 # =======================================================
 # NOTE(Elias): Helper Functions
 
-def loadmap(path:str) -> list[list[str]]:
-    return [ list(row) for row in open(path, "r").read().splitlines() ]
+Colors = [c.COLOR_RED,c.COLOR_CYAN,c.COLOR_MAGENTA,c.COLOR_GREEN]
+
+def loadmap(path:str) -> (list[list[str]],Body,list[Body]):
+    tiles =  [ list(row) for row in open(path, "r").read().splitlines() ]
+    ghosts = []
+    pacman = None
+    colorIndex = 0
+    colorLen = len(Colors)
+
+    for row,tileRow in enumerate(tiles):
+        for col,tile in enumerate(tileRow):
+            if tile == "P":
+                if pacman is not None:
+                    raise Exception("More than one pacman on the map")
+                pacman = Body(vec2(col,row),vec2(1,0))
+                tiles[row][col] = " "
+            elif tile == "G":
+                if colorIndex == colorLen:
+                    raise Exception("Number of ghosts on the map exceeded the maximum: "+str(colorLen))
+                ghosts.append(Ghost(Body(vec2(col,row),vec2(0,1)),Colors[colorIndex]))
+                colorIndex+=1
+                tiles[row][col] = " "
+    if pacman is None:
+        raise Exception("No pacman (symbol = 'P') found on the map")
+    return tiles,pacman,ghosts
 
 def rand_dir() -> vec2:
     return DIRS[randint(0, 3)]
@@ -148,15 +171,7 @@ def handlekeys(game:Game, key:int) -> None:
         game.pacman.dir = DIRS[3]
 
 def pacman(stdscr) -> None:
-
-    tiles = loadmap("map.txt")
-    pacman = Body(vec2(1, 1), vec2(1, 0))
-    ghosts = [
-        # Ghost(Body(vec2(1, 0),  vec2(1, 0)),  curses.COLOR_RED),
-        # Ghost(Body(vec2(10, 0), vec2(-1, 0)), curses.COLOR_CYAN),
-        # Ghost(Body(vec2(2, 10), vec2(1, 0)),  curses.COLOR_MAGENTA),
-        # Ghost(Body(vec2(3, 2),  vec2(1, 0)),  curses.COLOR_GREEN),
-        ]
+    tiles,pacman,ghosts = loadmap("map.txt")
 
     game:Game = Game(True, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
 
