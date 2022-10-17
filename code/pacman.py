@@ -83,6 +83,7 @@ def unset_color(win):
 # =======================================================
 # NOTE(Elias): Helper Functions
 
+#NOTE(BAVO
 Colors = [c.COLOR_RED,c.COLOR_CYAN,c.COLOR_MAGENTA,c.COLOR_GREEN]
 
 def loadmap(path:str) -> (list[list[str]],Body,list[Body]):
@@ -134,7 +135,7 @@ def game_update(game:Game, input) -> None:
         
         if ghost.body.pos == game.pacman.pos:
             game.running = False
-        
+
         # TODO(Elias): does not take into account a switch in direction
         # before encountering a wall
         pn = ghost.body.pos + ghost.body.dir
