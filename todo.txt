@@ -7,7 +7,7 @@
     (must do)
     -  keyboard input from ncurses [Elias]
     -  be able to move from oneside to the next at the edges (% operation?)
-    -  ghosts can only switch direction when encountering a wall at the moment 
+    V  ghosts can only switch direction when encountering a wall at the moment [Bavo]
     -  power pellet implementation
     -  food implementation
     V  expand maploader with start locations [Bavo]

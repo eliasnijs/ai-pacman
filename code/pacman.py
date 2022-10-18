@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 from enum import Enum
 from random import randint
@@ -96,7 +97,9 @@ def unset_color(win):
 # =======================================================
 # NOTE(Elias): Helper Functions
 
-Colors = [curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA, curses.COLOR_GREEN]
+
+#NOTE(Bavo): colors of the ghosts, and thus also the maximum number of ghosts
+Colors = [curses.COLOR_RED,curses.COLOR_CYAN,curses.COLOR_MAGENTA,curses.COLOR_GREEN]
 
 def loadmap(path:str) -> tuple[list[list[str]], Body, list[Body]]:
     tiles =  [ list(row) for row in open(path, "r").read().splitlines() ]
@@ -104,7 +107,7 @@ def loadmap(path:str) -> tuple[list[list[str]], Body, list[Body]]:
     pacman = None
     colorIndex = 0
     colorLen = len(Colors)
-
+    maxW = len(max(tiles,key=lambda x: len(x)))
     for row,tileRow in enumerate(tiles):
         for col,tile in enumerate(tileRow):
             if tile == "P":
@@ -118,6 +121,9 @@ def loadmap(path:str) -> tuple[list[list[str]], Body, list[Body]]:
                 ghosts.append(Ghost(Body(vec2(col,row),vec2(0,1)),Colors[colorIndex]))
                 colorIndex+=1
                 tiles[row][col] = " "
+        if len(tileRow)<maxW:
+            for _ in range(maxW-len(tileRow)):
+                tileRow.append(" ")
     if pacman is None:
         raise Exception("No pacman (symbol = 'P') found on the map")
     return tiles,pacman,ghosts
@@ -180,23 +186,35 @@ def game_update(game:Game) -> None:
             game.pacman.dir = DIRS[3]
     
     # NOTE(Elias): Update pacman
+    h = len(game.tiles)
+    w = len(game.tiles[0])
+
     pn = game.pacman.pos + game.pacman.dir
-    if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+    if 0 <= pn.x < w and 0 <= pn.y < h and game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
         game.pacman.pos = pn
 
-    # NOTE(Elias): Update ghosts 
+    # NOTE(Elias): Update ghosts
+
     for ghost in game.ghosts:
         
         if ghost.body.pos == game.pacman.pos:
             game.running = False
-        
-        # TODO(Elias): does not take into account a switch in direction
-        # before encountering a wall
+
+        open = []
+        for dir in DIRS:
+            pn = ghost.body.pos + dir
+            if (0 <= pn.x < w and 0 <= pn.y < h and game.tiles[pn.y][pn.x] == Tiles.EMPTY.value
+                    and dir != vec2(- ghost.body.dir.x,- ghost.body.dir.y)):
+                open.append(dir)
+        spots = len(open)
+        if spots == 0:
+            ghost.body.dir = vec2(- ghost.body.dir.x,- ghost.body.dir.y)
+        else:
+            ghost.body.dir = random.choice(open)
+
         pn = ghost.body.pos + ghost.body.dir
-        while game.tiles[pn.y][pn.x] != Tiles.EMPTY.value:
-            ghost.body.dir = rand_dir()
-            pn = ghost.body.pos + ghost.body.dir
-        ghost.body.pos = pn 
+        if 0 <= pn.x < w and 0 <= pn.y < h and game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+            ghost.body.pos = pn
         
         if ghost.body.pos == game.pacman.pos:
             game.running = False
@@ -230,7 +248,7 @@ def pacman(stdscr) -> None:
 
     stdscr.nodelay(True)    
 
-    while (game.running):
+    while game.running:
         start_t = time.perf_counter_ns()
 
         keys = kb_getqueue(stdscr)
