@@ -1,3 +1,3 @@
 @echo off
 
-python pacman.py
+python curses_pacman.py

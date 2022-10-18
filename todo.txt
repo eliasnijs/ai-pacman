@@ -5,14 +5,9 @@
     PHASE I - Implementing the game (No Ai yet)
 
     (must do)
-    -  keyboard input from ncurses [Elias]
     -  be able to move from oneside to the next at the edges (% operation?)
-    V  ghosts can only switch direction when encountering a wall at the moment [Bavo]
-    V  power pellet implementation [Bavo]
-    V  food implementation [Bavo]
-    V  expand maploader with start locations [Bavo]
-    V  score counter [Bavo]
     -  track statistics (import for ai)
+    -  cleanup pass
     
     (optional)
     -  better ghost algorithms (see https://youtu.be/ataGotQ7ir8)

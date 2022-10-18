@@ -1,105 +1,12 @@
-import random
-from dataclasses import dataclass
-from enum import Enum
-from random import randint
-import time
+import random as r
+import curses
 
-import curses as curses
-
-# ======================================================= #
-"""
-NOTE(Elias):
-Resources:
-- pacman in c:
-    https://github.com/MarquisdeGeek/pacman/tree/master/src
-- nc examples: 
-    https://github.com/zephyrproject-rtos/windows-curses/tree/master/examples
-- ghost mechanics:
-    https://youtu.be/ataGotQ7ir8
-"""
+from base import *
+from pacman_h import *
 
 
-# ======================================================= #
-# NOTE(Elias): Base Structs 
-
-@dataclass
-class vec2:
-    x: int
-    y: int
-
-    def __add__(self, other):
-        return vec2(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other):
-        return vec2(self.x - other.x, self.y - other.y)
-
-
-# ======================================================= #
-# NOTE(Elias): Game Structs 
-
-class Tiles(Enum):
-    EMPTY: str = ' '
-    WALL: str = '#'
-    PELLET: str = '·'
-    POWER: str = '0'
-
-
-@dataclass
-class Body:
-    pos: vec2
-    dir: vec2
-
-
-@dataclass
-class Ghost:
-    body: Body
-    spawn: vec2
-    killable: bool
-    deathtime: int
-    color: int
-
-
-@dataclass
-class Button:
-    wasdown:bool
-    isdown:bool 
-
-@dataclass
-class Controller:
-    up:Button
-    right:Button
-    down:Button
-    left:Button
-
-@dataclass
-class Game:
-    running: bool
-    controller:Controller
-    powertime: int
-    combo: int
-    score: int
-    w: int
-    h: int
-    tiles: list[list[str]]
-    pacman: Body
-    ghosts: list[Ghost]
-
-
-POWERTIMER = 60
-GHOSTRESPAWN = 30
-FPS = 6
-DIRS = [vec2(0,-1), vec2(1, 0), vec2(0,1), vec2(-1,0)]
-
-
-# =======================================================
-# NOTE(Elias): Base Functions
-
-def clamp(lb, v, ub):
-    return min(max(lb, v), ub)
-
-
-# =======================================================
-# NOTE(Elias): c Helper Functions
+# ==============================================================
+# NOTE(Elias): Drawing
 
 def set_color(win, fg, bg):
     if curses.has_colors():
@@ -114,22 +21,36 @@ def unset_color(win):
         win.attrset(curses.color_pair(0))
 
 
+# ==============================================================
+# NOTE(Elias): Keyboard
+
+def kb_down(button:Button):
+    return button.isdown
+
+def kb_downsingle(button:Button):
+    return button.isdown and not button.wasdown 
+
+def kb_upsingle(button:Button):
+    return not button.isdown and button.wasdown
+
 # =======================================================
 # NOTE(Elias): Helper Functions
 
 def isEmpty(row: int, col: int, game: Game) -> bool:
     return game.tiles[row][col] in [Tiles.EMPTY.value, Tiles.PELLET.value, Tiles.POWER.value]
 
+# TODO(Elias): Do this in a better way... color already set on the map?
 # NOTE(Bavo): colors of the ghosts, and thus also the maximum number of ghosts
 Colors = [curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA, curses.COLOR_GREEN]
 
-def loadmap(path: str) -> (list[list[str]], Body, list[Body]):
+def loadmap(path: str) -> tuple[list[list[str]], Body, list[Body]]:
     tiles = [list(row) for row in open(path, "r", encoding="utf-8").read().splitlines()]
     ghosts = []
     pacman = None
     colorIndex = 0
     colorLen = len(Colors)
     maxW = len(max(tiles, key=lambda x: len(x)))
+
     for row, tileRow in enumerate(tiles):
         for col, tile in enumerate(tileRow):
             if tile == "P":
@@ -153,7 +74,7 @@ def loadmap(path: str) -> (list[list[str]], Body, list[Body]):
 
 
 def rand_dir() -> vec2:
-    return DIRS[randint(0, 3)]
+    return DIRS[r.randint(0, 3)]
 
 # NOTE(Bavo): call this at beginning and end of ghost movement. Returns if the ghost may still move
 def handle_touch(game: Game, ghost: Ghost) -> bool:
@@ -171,42 +92,12 @@ def handle_touch(game: Game, ghost: Ghost) -> bool:
     return True
 
 # =======================================================
-# NOTE(Elias): Keyboard
-
-def kb_getqueue(w) -> list[int]:
-    keys = [] 
-    key_next = w.getch()
-    while (key_next != -1):
-        keys.append(key_next)
-        key_next = w.getch()
-    return keys
-
-def kb_key(button:Button, newstate:bool):
-    button.wasdown = button.isdown
-    button.isdown = newstate 
-
-def kb_down(button:Button):
-    return button.isdown
-
-def kb_downsingle(button:Button):
-    return button.isdown and not button.wasdown 
-
-def kb_upsingle(button:Button):
-    return not button.isdown and button.wasdown
-
-def handleinput(game:Game, keys:list[int]) -> None:
-    kb_key(game.controller.up, ord('w') in keys)
-    kb_key(game.controller.right, ord('d') in keys)
-    kb_key(game.controller.down, ord('s') in keys)
-    kb_key(game.controller.left, ord('a') in keys)
-
-            
-# =======================================================
 # NOTE(Elias): Game
     
 def game_update(game:Game) -> None:
 
     # NOTE(Elias): Handle controller input 
+    
     if kb_down(game.controller.up):
         pn = game.pacman.pos + DIRS[0] 
         if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
@@ -264,7 +155,7 @@ def game_update(game:Game) -> None:
                 if spots == 0:
                     ghost.body.dir = vec2(- ghost.body.dir.x, - ghost.body.dir.y)
                 else:
-                    ghost.body.dir = random.choice(open)
+                    ghost.body.dir = r.choice(open)
 
                 pn = ghost.body.pos + ghost.body.dir
                 if 0 <= pn.x < game.w and 0 <= pn.y < game.h and isEmpty(pn.y, pn.x, game):
@@ -276,8 +167,12 @@ def game_update(game:Game) -> None:
 def game_render(stdscr, game: Game) -> None:
     for i, row in enumerate(game.tiles):
         for j, tile in enumerate(row):
-            set_color(stdscr, curses.COLOR_YELLOW if tile == Tiles.PELLET.value else
-            curses.COLOR_WHITE if tile == Tiles.POWER.value else curses.COLOR_BLUE, curses.COLOR_BLACK)
+            if tile == Tiles.PELLET.value:
+                set_color(stdscr, curses.COLOR_YELLOW, curses.COLOR_BLACK) 
+            elif tile == Tiles.POWER.value:
+                set_color(stdscr, curses.COLOR_WHITE, curses.COLOR_BLACK) 
+            else:
+                set_color(stdscr, curses.COLOR_BLUE, curses.COLOR_BLACK) 
             stdscr.addstr(i, 2 * j, tile + " ")
 
     set_color(stdscr, curses.COLOR_YELLOW if game.powertime == 0 else curses.COLOR_WHITE, curses.COLOR_BLACK)
@@ -294,38 +189,3 @@ def game_render(stdscr, game: Game) -> None:
     stdscr.addstr(3, (game.w + 1)*2, f"score: {game.score}")
     
     stdscr.refresh()
-
-
-# =======================================================
-# NOTE(Elias): Main
-
-def pacman(stdscr) -> None:
-    tiles, pacman, ghosts = loadmap("map.txt")
-
-    controller = Controller(Button(False, False), Button(False, False), Button(False, False), Button(False, False))
-    game:Game = Game(True, controller, 0, 0, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
-
-    stdscr.nodelay(True)
-
-    while game.running:
-        start_t = time.perf_counter_ns()
-
-        keys = kb_getqueue(stdscr)
-        if ord('q') in keys:
-            break
-        handleinput(game, keys)
-
-        game_update(game)
-        game_render(stdscr, game)
-        
-        end_t = time.perf_counter_ns()
-        wait_t = (1/FPS)*10e9 - (end_t - start_t)
-        if (wait_t > 0):
-            # NOTE(Elias): Is sleep the correct way of doing this?
-            # There might be a problem with interrupt signals?
-            time.sleep(wait_t / 10e9)
-
-# =======================================================
-# NOTE(Elias): start application
-
-curses.wrapper(pacman)
