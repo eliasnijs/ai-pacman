@@ -98,20 +98,20 @@ def game_update(game:Game) -> None:
     # NOTE(Elias): Handle controller input 
     
     if kb_down(game.controller.up):
-        pn = game.pacman.pos + DIRS[0] 
-        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+        pn = game.pacman.pos + DIRS[0]
+        if is_empty(pn.y,pn.x,game):
             game.pacman.dir = DIRS[0]
     elif kb_down(game.controller.right):
         pn = game.pacman.pos + DIRS[1] 
-        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+        if is_empty(pn.y,pn.x,game):
             game.pacman.dir = DIRS[1]
     elif kb_down(game.controller.down):
         pn = game.pacman.pos + DIRS[2] 
-        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+        if is_empty(pn.y,pn.x,game):
             game.pacman.dir = DIRS[2]
     elif kb_down(game.controller.left):
         pn = game.pacman.pos + DIRS[3] 
-        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+        if is_empty(pn.y,pn.x,game):
             game.pacman.dir = DIRS[3]
     
     # NOTE(Elias): Update pacman
