@@ -1,0 +1,4 @@
+
+    bugs.txt
+    
+    - [ ] pacman won't move up or down
