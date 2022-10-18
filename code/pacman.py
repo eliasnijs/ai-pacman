@@ -48,8 +48,21 @@ class Ghost:
     color:int
 
 @dataclass
+class Button:
+    wasdown:bool
+    isdown:bool 
+
+@dataclass
+class Controller:
+    up:Button
+    right:Button
+    down:Button
+    left:Button
+
+@dataclass
 class Game:
     running:bool 
+    controller:Controller
     score:int
     w:int
     h:int
@@ -57,11 +70,11 @@ class Game:
     pacman:Body
     ghosts:list[Ghost]
 
-FPS = 15
-DIRS = [vec2(0,1), vec2(1, 0), vec2(0,-1), vec2(-1,0)]
+FPS = 6
+DIRS = [vec2(0,-1), vec2(1, 0), vec2(0,1), vec2(-1,0)]
 
 
-# ======================================================= #
+# =======================================================
 # NOTE(Elias): Base Functions
 
 def clamp(lb, v, ub):
@@ -84,10 +97,11 @@ def unset_color(win):
 # =======================================================
 # NOTE(Elias): Helper Functions
 
+
 #NOTE(Bavo): colors of the ghosts, and thus also the maximum number of ghosts
 Colors = [curses.COLOR_RED,curses.COLOR_CYAN,curses.COLOR_MAGENTA,curses.COLOR_GREEN]
 
-def loadmap(path:str) -> (list[list[str]],Body,list[Body]):
+def loadmap(path:str) -> tuple[list[list[str]], Body, list[Body]]:
     tiles =  [ list(row) for row in open(path, "r").read().splitlines() ]
     ghosts = []
     pacman = None
@@ -116,11 +130,61 @@ def loadmap(path:str) -> (list[list[str]],Body,list[Body]):
 
 def rand_dir() -> vec2:
     return DIRS[randint(0, 3)]
+
+# =======================================================
+# NOTE(Elias): Keyboard
+
+def kb_getqueue(w) -> list[int]:
+    keys = [] 
+    key_next = w.getch()
+    while (key_next != -1):
+        keys.append(key_next)
+        key_next = w.getch()
+    return keys
+
+def kb_key(button:Button, newstate:bool):
+    button.wasdown = button.isdown
+    button.isdown = newstate 
+
+def kb_down(button:Button):
+    return button.isdown
+
+def kb_downsingle(button:Button):
+    return button.isdown and not button.wasdown 
+
+def kb_upsingle(button:Button):
+    return not button.isdown and button.wasdown
+
+def handleinput(game:Game, keys:list[int]) -> None:
+    kb_key(game.controller.up, ord('w') in keys)
+    kb_key(game.controller.right, ord('d') in keys)
+    kb_key(game.controller.down, ord('s') in keys)
+    kb_key(game.controller.left, ord('a') in keys)
+
             
 # =======================================================
 # NOTE(Elias): Game
     
-def game_update(game:Game, input) -> None:
+def game_update(game:Game) -> None:
+
+    # NOTE(Elias): Handle controller input 
+    if kb_down(game.controller.up):
+        pn = game.pacman.pos + DIRS[0] 
+        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+            game.pacman.dir = DIRS[0]
+    elif kb_down(game.controller.right):
+        pn = game.pacman.pos + DIRS[1] 
+        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+            game.pacman.dir = DIRS[1]
+    elif kb_down(game.controller.down):
+        pn = game.pacman.pos + DIRS[2] 
+        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+            game.pacman.dir = DIRS[2]
+    elif kb_down(game.controller.left):
+        pn = game.pacman.pos + DIRS[3] 
+        if game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+            game.pacman.dir = DIRS[3]
+    
     # NOTE(Elias): Update pacman
     h = len(game.tiles)
     w = len(game.tiles[0])
@@ -168,7 +232,7 @@ def game_render(stdscr, game:Game) -> None:
         stdscr.addstr(ghost.body.pos.y, ghost.body.pos.x*2, 'M')
     
     unset_color(stdscr)
-    stdscr.addstr(0, (game.w + 1)*2, f"Ai-Pacman (c) Elias Nijs, Bavo Verstraeten")
+    stdscr.addstr(0, (game.w + 1)*2, f"Ai-Pacman")
     stdscr.addstr(3, (game.w + 1)*2, f"score: {game.score}")
     
     stdscr.refresh()
@@ -176,42 +240,33 @@ def game_render(stdscr, game:Game) -> None:
 # =======================================================
 # NOTE(Elias): Main
 
-def handlekeys(game:Game, key:int) -> None:
-    if key == ord('w'): 
-        game.pacman.dir = DIRS[0]
-    elif key == ord('d'): 
-        game.pacman.dir = DIRS[1]
-    elif key == ord('s'): 
-        game.pacman.dir = DIRS[2]
-    elif key == ord('a'): 
-        game.pacman.dir = DIRS[3]
-
 def pacman(stdscr) -> None:
     tiles,pacman,ghosts = loadmap("map.txt")
 
-    game:Game = Game(True, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
-
-    nspf = (1/FPS)*10e9
+    controller = Controller(Button(False, False), Button(False, False), Button(False, False), Button(False, False))
+    game:Game = Game(True, controller, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
 
     stdscr.nodelay(True)    
 
     while game.running:
         start_t = time.perf_counter_ns()
-        key = stdscr.getch()
-        if key == ord('q'):
+
+        keys = kb_getqueue(stdscr)
+        if ord('q') in keys:
             break
-        else: 
-            handlekeys(game, key)
-        game_update(game, None)
+        
+        handleinput(game, keys)
+
+        game_update(game)
         game_render(stdscr, game)
         end_t = time.perf_counter_ns()
-        wait_t = nspf - (end_t - start_t)
+        wait_t = (1/FPS)*10e9 - (end_t - start_t)
         if (wait_t > 0):
             # NOTE(Elias): Is sleep the correct way of doing this?
             # There might be a problem with interrupt signals?
             time.sleep(wait_t/10e9) 
 
-# ======================================================= #
+# =======================================================
 # NOTE(Elias): start application #
 
 curses.wrapper(pacman)
