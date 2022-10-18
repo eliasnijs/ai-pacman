@@ -18,34 +18,46 @@ Resources:
     https://youtu.be/ataGotQ7ir8
 """
 
+
 # ======================================================= #
 # NOTE(Elias): Base Structs 
 
 @dataclass
 class vec2:
-    x:int
-    y:int
+    x: int
+    y: int
+
     def __add__(self, other):
         return vec2(self.x + other.x, self.y + other.y)
+
     def __sub__(self, other):
         return vec2(self.x - other.x, self.y - other.y)
+
 
 # ======================================================= #
 # NOTE(Elias): Game Structs 
 
 class Tiles(Enum):
-    EMPTY:str = ' '
-    WALL:str = '#'
+    EMPTY: str = ' '
+    WALL: str = '#'
+    PELLET: str = '·'
+    POWER: str = '0'
+
 
 @dataclass
 class Body:
-    pos:vec2
-    dir:vec2
+    pos: vec2
+    dir: vec2
+
 
 @dataclass
 class Ghost:
-    body:Body
-    color:int
+    body: Body
+    spawn: vec2
+    killable: bool
+    deathtime: int
+    color: int
+
 
 @dataclass
 class Button:
@@ -61,15 +73,20 @@ class Controller:
 
 @dataclass
 class Game:
-    running:bool 
+    running: bool
     controller:Controller
-    score:int
-    w:int
-    h:int
-    tiles:list[str]
-    pacman:Body
-    ghosts:list[Ghost]
+    powertime: int
+    combo: int
+    score: int
+    w: int
+    h: int
+    tiles: list[list[str]]
+    pacman: Body
+    ghosts: list[Ghost]
 
+
+POWERTIMER = 60
+GHOSTRESPAWN = 30
 FPS = 6
 DIRS = [vec2(0,-1), vec2(1, 0), vec2(0,1), vec2(-1,0)]
 
@@ -79,6 +96,7 @@ DIRS = [vec2(0,-1), vec2(1, 0), vec2(0,1), vec2(-1,0)]
 
 def clamp(lb, v, ub):
     return min(max(lb, v), ub)
+
 
 # =======================================================
 # NOTE(Elias): c Helper Functions
@@ -90,46 +108,67 @@ def set_color(win, fg, bg):
         win.attroff(curses.A_COLOR)
         win.attron(curses.color_pair(n))
 
+
 def unset_color(win):
     if curses.has_colors():
         win.attrset(curses.color_pair(0))
 
+
 # =======================================================
 # NOTE(Elias): Helper Functions
 
+def isEmpty(row: int, col: int, game: Game) -> bool:
+    return game.tiles[row][col] in [Tiles.EMPTY.value, Tiles.PELLET.value, Tiles.POWER.value]
 
-#NOTE(Bavo): colors of the ghosts, and thus also the maximum number of ghosts
-Colors = [curses.COLOR_RED,curses.COLOR_CYAN,curses.COLOR_MAGENTA,curses.COLOR_GREEN]
+# NOTE(Bavo): colors of the ghosts, and thus also the maximum number of ghosts
+Colors = [curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA, curses.COLOR_GREEN]
 
-def loadmap(path:str) -> tuple[list[list[str]], Body, list[Body]]:
-    tiles =  [ list(row) for row in open(path, "r").read().splitlines() ]
+def loadmap(path: str) -> (list[list[str]], Body, list[Body]):
+    tiles = [list(row) for row in open(path, "r", encoding="utf-8").read().splitlines()]
     ghosts = []
     pacman = None
     colorIndex = 0
     colorLen = len(Colors)
-    maxW = len(max(tiles,key=lambda x: len(x)))
-    for row,tileRow in enumerate(tiles):
-        for col,tile in enumerate(tileRow):
+    maxW = len(max(tiles, key=lambda x: len(x)))
+    for row, tileRow in enumerate(tiles):
+        for col, tile in enumerate(tileRow):
             if tile == "P":
                 if pacman is not None:
                     raise Exception("More than one pacman on the map")
-                pacman = Body(vec2(col,row),vec2(1,0))
-                tiles[row][col] = " "
+                pacman = Body(vec2(col, row), vec2(1, 0))
+                tiles[row][col] = Tiles.PELLET.value
             elif tile == "G":
                 if colorIndex == colorLen:
-                    raise Exception("Number of ghosts on the map exceeded the maximum: "+str(colorLen))
-                ghosts.append(Ghost(Body(vec2(col,row),vec2(0,1)),Colors[colorIndex]))
-                colorIndex+=1
-                tiles[row][col] = " "
-        if len(tileRow)<maxW:
-            for _ in range(maxW-len(tileRow)):
+                    raise Exception("Number of ghosts on the map exceeded the maximum: " + str(colorLen))
+                ghosts.append(Ghost(Body(vec2(col, row), vec2(0, 1)), vec2(col, row), False, 0, Colors[colorIndex]))
+                colorIndex += 1
+                tiles[row][col] = Tiles.PELLET.value
+
+        if len(tileRow) < maxW:
+            for _ in range(maxW - len(tileRow)):
                 tileRow.append(" ")
     if pacman is None:
         raise Exception("No pacman (symbol = 'P') found on the map")
-    return tiles,pacman,ghosts
+    return tiles, pacman, ghosts
+
 
 def rand_dir() -> vec2:
     return DIRS[randint(0, 3)]
+
+# NOTE(Bavo): call this at beginning and end of ghost movement. Returns if the ghost may still move
+def handle_touch(game: Game, ghost: Ghost) -> bool:
+    if ghost.body.pos == game.pacman.pos:
+        if not ghost.killable:
+            game.running = False
+        else:
+            ghost.body.pos = ghost.spawn
+            ghost.body.dir = vec2(0, 1)
+            ghost.deathtime = GHOSTRESPAWN
+            ghost.killable = False
+            game.score += game.combo
+            game.combo *= 2
+        return False
+    return True
 
 # =======================================================
 # NOTE(Elias): Keyboard
@@ -186,67 +225,87 @@ def game_update(game:Game) -> None:
             game.pacman.dir = DIRS[3]
     
     # NOTE(Elias): Update pacman
-    h = len(game.tiles)
-    w = len(game.tiles[0])
+
+    if game.powertime > 0:
+        game.powertime -= 1
+    else:
+        game.combo = 0
 
     pn = game.pacman.pos + game.pacman.dir
-    if 0 <= pn.x < w and 0 <= pn.y < h and game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
+    if 0 <= pn.x < game.w and 0 <= pn.y < game.h and isEmpty(pn.y, pn.x, game):
         game.pacman.pos = pn
+        if game.tiles[pn.y][pn.x] == Tiles.PELLET.value:
+            game.tiles[pn.y][pn.x] = Tiles.EMPTY.value
+            game.score += 10
+        if game.tiles[pn.y][pn.x] == Tiles.POWER.value:
+            game.tiles[pn.y][pn.x] = Tiles.EMPTY.value
+            game.score += 50
+            game.powertime = POWERTIMER
+            game.combo = 200
 
     # NOTE(Elias): Update ghosts
 
     for ghost in game.ghosts:
-        
-        if ghost.body.pos == game.pacman.pos:
-            game.running = False
-
-        open = []
-        for dir in DIRS:
-            pn = ghost.body.pos + dir
-            if (0 <= pn.x < w and 0 <= pn.y < h and game.tiles[pn.y][pn.x] == Tiles.EMPTY.value
-                    and dir != vec2(- ghost.body.dir.x,- ghost.body.dir.y)):
-                open.append(dir)
-        spots = len(open)
-        if spots == 0:
-            ghost.body.dir = vec2(- ghost.body.dir.x,- ghost.body.dir.y)
+        if ghost.deathtime > 0:
+            ghost.deathtime -= 1
         else:
-            ghost.body.dir = random.choice(open)
+            if game.powertime == POWERTIMER:
+                ghost.killable = True
+            if game.powertime == 0:
+                ghost.killable = False
+            if handle_touch(game, ghost):
+                open = []
+                for dir in DIRS:
+                    pn = ghost.body.pos + dir
+                    if (0 <= pn.x < game.w and 0 <= pn.y < game.h and isEmpty(pn.y, pn.x, game)
+                            and dir != vec2(- ghost.body.dir.x, - ghost.body.dir.y)):
+                        open.append(dir)
+                spots = len(open)
+                if spots == 0:
+                    ghost.body.dir = vec2(- ghost.body.dir.x, - ghost.body.dir.y)
+                else:
+                    ghost.body.dir = random.choice(open)
 
-        pn = ghost.body.pos + ghost.body.dir
-        if 0 <= pn.x < w and 0 <= pn.y < h and game.tiles[pn.y][pn.x] == Tiles.EMPTY.value:
-            ghost.body.pos = pn
-        
-        if ghost.body.pos == game.pacman.pos:
-            game.running = False
+                pn = ghost.body.pos + ghost.body.dir
+                if 0 <= pn.x < game.w and 0 <= pn.y < game.h and isEmpty(pn.y, pn.x, game):
+                    ghost.body.pos = pn
 
-def game_render(stdscr, game:Game) -> None:
-    set_color(stdscr, curses.COLOR_BLUE, curses.COLOR_BLACK)
+                handle_touch(game, ghost)
+
+
+def game_render(stdscr, game: Game) -> None:
     for i, row in enumerate(game.tiles):
-        stdscr.addstr(i, 0, ' '.join(row))
-    
-    set_color(stdscr, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x*2, 'Q')
-    
+        for j, tile in enumerate(row):
+            set_color(stdscr, curses.COLOR_YELLOW if tile == Tiles.PELLET.value else
+            curses.COLOR_WHITE if tile == Tiles.POWER.value else curses.COLOR_BLUE, curses.COLOR_BLACK)
+            stdscr.addstr(i, 2 * j, tile + " ")
+
+    set_color(stdscr, curses.COLOR_YELLOW if game.powertime == 0 else curses.COLOR_WHITE, curses.COLOR_BLACK)
+    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x * 2, 'Q')
+
     for ghost in game.ghosts:
-        set_color(stdscr, ghost.color, curses.COLOR_BLACK)
-        stdscr.addstr(ghost.body.pos.y, ghost.body.pos.x*2, 'M')
-    
+        set_color(stdscr, curses.COLOR_WHITE if ghost.killable else
+        curses.COLOR_BLUE if ghost.deathtime > 0 else ghost.color, curses.COLOR_BLACK)
+        stdscr.addstr(ghost.body.pos.y, ghost.body.pos.x * 2, 'M')
+
     unset_color(stdscr)
+
     stdscr.addstr(0, (game.w + 1)*2, f"Ai-Pacman")
     stdscr.addstr(3, (game.w + 1)*2, f"score: {game.score}")
     
     stdscr.refresh()
 
+
 # =======================================================
 # NOTE(Elias): Main
 
 def pacman(stdscr) -> None:
-    tiles,pacman,ghosts = loadmap("map.txt")
+    tiles, pacman, ghosts = loadmap("map.txt")
 
     controller = Controller(Button(False, False), Button(False, False), Button(False, False), Button(False, False))
-    game:Game = Game(True, controller, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
+    game:Game = Game(True, controller, 0, 0, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
 
-    stdscr.nodelay(True)    
+    stdscr.nodelay(True)
 
     while game.running:
         start_t = time.perf_counter_ns()
@@ -254,19 +313,19 @@ def pacman(stdscr) -> None:
         keys = kb_getqueue(stdscr)
         if ord('q') in keys:
             break
-        
         handleinput(game, keys)
 
         game_update(game)
         game_render(stdscr, game)
+        
         end_t = time.perf_counter_ns()
         wait_t = (1/FPS)*10e9 - (end_t - start_t)
         if (wait_t > 0):
             # NOTE(Elias): Is sleep the correct way of doing this?
             # There might be a problem with interrupt signals?
-            time.sleep(wait_t/10e9) 
+            time.sleep(wait_t / 10e9)
 
 # =======================================================
-# NOTE(Elias): start application #
+# NOTE(Elias): start application
 
 curses.wrapper(pacman)
