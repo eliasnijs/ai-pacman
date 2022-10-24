@@ -2,13 +2,13 @@
     todo.txt
 
 
-    PHASE I - Implementing the game (No Ai yet)
+    PHASE I - Implementing the game
+    (Goals: playable game)
 
-    (must do)
     - [ ] be able to move from oneside to the next at the edges (% operation?) [Bavo]
     - [ ] track statistics (import for ai)
     - [ ] cleanup pass
-    
+
     - [x] figure out interface with terminal [Elias]
     - [x] keyboard input from ncurses [Elias]
     - [x] basic maploading [Elias]
@@ -21,15 +21,13 @@
     - [x] food implementation [bavo]
     - [x] expand maploader with start locations [Bavo]
     - [x] score counter [Bavo]
-    
-    (optional)
-    - [ ] better ghost algorithms (see https://youtu.be/ataGotQ7ir8)
 
 
     PHASE II - Implementing an Ai for Pacman
-      
+    (Goals: evade ghosts, learn to eat food, learn to eat power pellets)
 
 
-    PHASE III - Implementing an Ai for the ghosts 
-      
-      
+
+    PHASE III - Implementing an Ai for the ghosts
+
+
