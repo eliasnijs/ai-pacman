@@ -15,4 +15,4 @@ def clamp(lb, v, ub):
     return min(max(lb, v), ub)
 
 def in_between(lb, v, ub) -> bool:
-    return lb <= v < ub;
+    return lb <= v < ub

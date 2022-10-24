@@ -39,10 +39,10 @@ def kb_key(button:Button, newstate:bool):
     button.isdown = newstate
 
 def handleinput(game:Game, keys:list[int]) -> None:
-    kb_key(game.controller.up, ord('w') in keys)
+    kb_key(game.controller.up, ord('z') in keys)
     kb_key(game.controller.right, ord('d') in keys)
     kb_key(game.controller.down, ord('s') in keys)
-    kb_key(game.controller.left, ord('a') in keys)
+    kb_key(game.controller.left, ord('q') in keys)
 
 # ==============================================================
 # NOTE(Elias): Controllor
@@ -95,13 +95,14 @@ def rand_dir() -> vec2:
 
 # TODO(Elias): Do this in a better way... color already set on the map?
 
-def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[PhysicsBody]]:
+def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[Ghost], int]:
     tiles = [list(row) for row in open(path, "r", encoding="utf-8").read().splitlines()]
     ghosts = []
     pacman = None
     colorIndex = 0
     colorLen = len(GHOST_COLORS)
     maxW = len(max(tiles, key=lambda x: len(x)))
+    pelletcount = 0
 
     for row, tileRow in enumerate(tiles):
         for col, tile in enumerate(tileRow):
@@ -109,25 +110,27 @@ def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[PhysicsBody]]
                 if pacman is not None:
                     raise Exception("More than one pacman on the map")
                 pacman = PhysicsBody(vec2(col, row), vec2(1, 0))
-                tiles[row][col] = TILES.PELLET.value
             elif tile == "G":
                 if colorIndex == colorLen:
                     raise Exception("Number of ghosts on the map exceeded the maximum: " + str(colorLen))
                 ghosts.append(Ghost(PhysicsBody(vec2(col, row), vec2(0, 1)), vec2(col, row), False, 0, GHOST_COLORS[colorIndex]))
                 colorIndex += 1
                 tiles[row][col] = TILES.PELLET.value
+                pelletcount+=1
+            elif tile == TILES.PELLET.value:
+                pelletcount+=1
 
         if len(tileRow) < maxW:
             for _ in range(maxW - len(tileRow)):
                 tileRow.append(" ")
     if pacman is None:
         raise Exception("No pacman (symbol = 'P') found on the map")
-    return tiles, pacman, ghosts
+    return tiles, pacman, ghosts, pelletcount
 
 def new_game(map_path:str) -> Game:
-    tiles, pacman, ghosts = loadmap(map_path)
+    tiles, pacman, ghosts ,pellets= loadmap(map_path)
     controller = new_controller()
-    return Game(True, controller, 0, 0, 0, len(tiles[0]), len(tiles), tiles, pacman, ghosts)
+    return Game(True, controller, 0, 0, 0, len(tiles[0]), len(tiles), tiles, pellets, pacman, ghosts)
 
 def game_update(game:Game) -> None:
 
@@ -158,6 +161,7 @@ def game_update(game:Game) -> None:
         if game.tiles[pn.y][pn.x] == TILES.PELLET.value:
             game.tiles[pn.y][pn.x] = TILES.EMPTY.value
             game.score += 10
+            game.pelletcount-=1
         if game.tiles[pn.y][pn.x] == TILES.POWER.value:
             game.tiles[pn.y][pn.x] = TILES.EMPTY.value
             game.score += 50
@@ -196,6 +200,7 @@ def game_update(game:Game) -> None:
 
 def game_render(stdscr, game: Game) -> None:
     # NOTE(Elias): Render map
+    print(game.pelletcount)
     for i, row in enumerate(game.tiles):
         for j, tile in enumerate(row):
             if tile == TILES.PELLET.value:
@@ -222,7 +227,7 @@ def game_render(stdscr, game: Game) -> None:
         elif ghost.deathtime > 0:
             set_color(stdscr, 18)
         else:
-            set_color(stdscr, 18)
+            set_color(stdscr, ghost.color)
         stdscr.addstr(ghost.body.pos.y, ghost.body.pos.x * 2, 'M')
 
     # NOTE(Elias): Render statistics
@@ -235,7 +240,7 @@ def game_render(stdscr, game: Game) -> None:
 # =======================================================
 # NOTE(Elias): Main
 
-def pacman(stdscr) -> None:
+def pacman(stdscr) -> int:
 
     # NOTE(Elias): initialisation
     stdscr.nodelay(True) # NOTE(Elias): configure curses keyboard input
@@ -243,11 +248,11 @@ def pacman(stdscr) -> None:
     framecnt = 0
 
     # NOTE(Elias): running
-    while game.running:
+    while True:
         start_t = time.perf_counter_ns()
 
         keys = kb_getqueue(stdscr)
-        if ord('q') in keys:
+        if ord('a') in keys:
             break
         handleinput(game, keys)
 
@@ -289,5 +294,5 @@ def pacman_no_ui() -> int:
 if __name__ == "__main__":
     framecnts = [pacman_no_ui() for i in range(120)]
     print(sum(framecnts)/len(framecnts))
-    # curses.wrapper(pacman)
+    curses.wrapper(pacman)
 

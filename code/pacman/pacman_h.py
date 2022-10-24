@@ -47,13 +47,14 @@ class Game:
     w:int
     h:int
     tiles:list[list[str]]
+    pelletcount: int
     pacman:PhysicsBody
     ghosts:list[Ghost]
 
 # ==============================================================
 # NOTE(Elias): Constants
 
-FPS          = 6
+FPS          = 15
 POWERTIMER   = 60
 GHOSTRESPAWN = 30
 DIRS         = [vec2(0,-1), vec2(1, 0), vec2(0,1), vec2(-1,0)]
