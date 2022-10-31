@@ -39,10 +39,10 @@ def kb_key(button:Button, newstate:bool):
     button.isdown = newstate
 
 def handleinput(game:Game, keys:list[int]) -> None:
-    kb_key(game.controller.up, ord('z') in keys)
+    kb_key(game.controller.up, ord('w') in keys)
     kb_key(game.controller.right, ord('d') in keys)
     kb_key(game.controller.down, ord('s') in keys)
-    kb_key(game.controller.left, ord('q') in keys)
+    kb_key(game.controller.left, ord('a') in keys)
 
 # ==============================================================
 # NOTE(Elias): Controllor
@@ -200,7 +200,6 @@ def game_update(game:Game) -> None:
 
 def game_render(stdscr, game: Game) -> None:
     # NOTE(Elias): Render map
-    print(game.pelletcount)
     for i, row in enumerate(game.tiles):
         for j, tile in enumerate(row):
             if tile == TILES.PELLET.value:
@@ -252,7 +251,7 @@ def pacman(stdscr) -> int:
         start_t = time.perf_counter_ns()
 
         keys = kb_getqueue(stdscr)
-        if ord('a') in keys:
+        if ord('q') in keys:
             break
         handleinput(game, keys)
 
