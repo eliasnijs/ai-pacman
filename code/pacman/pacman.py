@@ -66,7 +66,7 @@ def kb_upsingle(button:Button):
 # NOTE(Elias): Helper Functions
 
 def is_empty(game:Game, pos:vec2) -> bool:
-    return game.tiles[pos.y][pos.x] != TILES.WALL.value
+    return on_field(game, pos) and game.tiles[pos.y][pos.x] != TILES.WALL.value
 
 def on_field(game:Game, pos:vec2) -> bool:
     return in_between(0, pos.x, game.w) and in_between(0, pos.y, game.h)
@@ -110,6 +110,7 @@ def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[Ghost], int]:
                 if pacman is not None:
                     raise Exception("More than one pacman on the map")
                 pacman = PhysicsBody(vec2(col, row), vec2(1, 0))
+                tiles[row][col] = TILES.EMPTY.value
             elif tile == "G":
                 if colorIndex == colorLen:
                     raise Exception("Number of ghosts on the map exceeded the maximum: " + str(colorLen))
