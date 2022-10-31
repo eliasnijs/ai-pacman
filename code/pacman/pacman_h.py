@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
-from base import *
 import curses
+from pacman.base import *
 
 # ==============================================================
 # NOTE(Elias): Keyboard

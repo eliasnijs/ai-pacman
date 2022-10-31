@@ -4,8 +4,8 @@ import random as r
 import time
 import curses
 
-from base import *
-from pacman_h import *
+from pacman.base import *
+from pacman.pacman_h import *
 
 
 # ==============================================================
@@ -217,7 +217,7 @@ def game_render(stdscr, game: Game) -> None:
         set_color(stdscr, curses.COLOR_WHITE)
     else:
         set_color(stdscr, curses.COLOR_YELLOW)
-    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x * 2, 'Q')
+    stdscr.addstr(game.pacman.pos.y, game.pacman.pos.x * 2, 'P')
 
     # NOTE(Elias): Render ghosts
     for ghost in game.ghosts:
@@ -247,7 +247,7 @@ def pacman(stdscr) -> int:
     framecnt = 0
 
     # NOTE(Elias): running
-    while True:
+    while game.running:
         start_t = time.perf_counter_ns()
 
         keys = kb_getqueue(stdscr)
@@ -288,10 +288,7 @@ def pacman_no_ui() -> int:
     return framecnt
 
 
-
 # NOTE(Elias): start the program
 if __name__ == "__main__":
-    framecnts = [pacman_no_ui() for i in range(120)]
-    print(sum(framecnts)/len(framecnts))
     curses.wrapper(pacman)
 

@@ -1,0 +1,15 @@
+
+
+  int powerimte
+  int combo
+  int score
+  str tiles 28*24
+
+  pacman.pos
+
+  voor alle ghosts
+    ghosts.pos
+    ghosts.killable
+    ghosts.deattim
+
+

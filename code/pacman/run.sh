@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python3 curses_pacman.py
+python3 pacman.py
