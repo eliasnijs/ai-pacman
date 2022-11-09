@@ -1,0 +1,16 @@
+
+
+
+Pacman Ai - The Environment V1:
+
+This environment does not support eating ghosts. The challenge
+here is to learn to eat pellets to increase and to not get killed
+by the ghosts.
+
+1.  The observation space:
+    - pacman.x, pacman.y, pacman.dx, pacman.dy
+    - for ghost in all ghosts: delta_ghost.x, delta_ghost.y, ghost.dx, ghost.dy
+    - tiles (pellet, empty or wall)
+
+
+

@@ -4,16 +4,16 @@ import gym
 from gym import spaces
 
 from pacman.pacman import *
-    
+
 def strtile_to_inttile(char):
     if char == TILES.EMPTY.value:
-        return 0 
+        return 0
     elif char == TILES.WALL.value:
-        return 1 
+        return 1
     elif char == TILES.PELLET.value:
-        return 2 
+        return 2
     elif char == TILES.POWER.value:
-        return 3 
+        return 3
     else:
         raise ValueError(char)
 
@@ -22,8 +22,8 @@ def strtiles_to_inttiles(tiles):
 
 def ghosts_to_ghostarr(ghosts):
     return np.array([ np.array([
-        ghost.body.pos.x, ghost.body.pos.y, 
-        ghost.body.dir.x, ghost.body.dir.y, 
+        ghost.body.pos.x, ghost.body.pos.y,
+        ghost.body.dir.x, ghost.body.dir.y,
         ghost.killable, ghost.deathtime
         ]) for ghost in ghosts ]).flatten().tolist()
 
@@ -39,10 +39,10 @@ class pacmanEnv(gym.Env):
     def __init__(self, map="pacman/maps/map.txt", stdscr=None):
         super(pacmanEnv, self).__init__()
         self.map = map
-        self.stdscr = stdscr 
+        self.stdscr = stdscr
         self.game = new_game(map)
         self.action_space = spaces.Discrete(4)
-        
+
         nr_ghosts = len(self.game.ghosts)
 
         # GROOT BAVO MOMENT XD
@@ -50,9 +50,9 @@ class pacmanEnv(gym.Env):
         self.low = np.array([0,0,0,0,0,0] + [0,0,-1,-1, False, 0]*len(self.game.ghosts) + [0]*len(self.game.tiles)*len(self.game.tiles[0]))
         self.high = np.array(
             [
-                POWERTIMER, 3200, np.inf, 
-                len(self.game.tiles)*len(self.game.tiles[0]), 
-                len(self.game.tiles[0]), len(self.game.tiles)]+            
+                POWERTIMER, 3200, np.inf,
+                len(self.game.tiles)*len(self.game.tiles[0]),
+                len(self.game.tiles[0]), len(self.game.tiles)]+
             [   len(self.game.tiles[0]), len(self.game.tiles),1,1,1,GHOSTRESPAWN]*len(self.game.ghosts)+
             [3]*len(self.game.tiles)*len(self.game.tiles[0])
             )
@@ -64,16 +64,16 @@ class pacmanEnv(gym.Env):
         kb_key(self.game.controller.left, action == self.LEFT)
         kb_key(self.game.controller.down, action == self.BOTTOM)
         kb_key(self.game.controller.right, action == self.RIGHT)
-        
+
         prev_score = self.game.score
         game_update(self.game)
         reward = self.game.score - prev_score
-        
+
         tilearr = strtiles_to_inttiles(self.game.tiles)
         statarr = [self.game.powertime, self.game.combo, self.game.score, self.game.pelletcount]
         ghostarr = ghosts_to_ghostarr(self.game.ghosts)
         gamearr = np.array(statarr + [self.game.pacman.pos.x, self.game.pacman.pos.y] + ghostarr + tilearr)
-        
+
         if not self.game.running:
             reward = -1000.0
 
@@ -86,7 +86,7 @@ class pacmanEnv(gym.Env):
         statarr = [self.game.powertime, self.game.combo, self.game.score, self.game.pelletcount]
         ghostarr = ghosts_to_ghostarr(self.game.ghosts)
         gamearr = np.array(statarr + [self.game.pacman.pos.x, self.game.pacman.pos.y] + ghostarr + tilearr)
-        
+
         return gamearr
 
     def render(self, mode='basic'):
@@ -94,7 +94,7 @@ class pacmanEnv(gym.Env):
             # will not work in notebooks :(
             if self.stdscr == None:
                 raise ValueError
-            game_render(self.stdscr, self.game) 
+            game_render(self.stdscr, self.game)
         elif mode == 'basic':
             print(f"game = [pacman: ({self.game.pacman.pos.x},{self.game.pacman.pos.y}), [", end="")
             for i,g in enumerate(self.game.ghosts):
