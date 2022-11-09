@@ -38,6 +38,7 @@ class pacmanEnv(gym.Env):
 
     def __init__(self, map="pacman/maps/map.txt", stdscr=None):
         super(pacmanEnv, self).__init__()
+        self.map = map
         self.stdscr = stdscr 
         self.game = new_game(map)
         self.action_space = spaces.Discrete(4)
@@ -59,26 +60,28 @@ class pacmanEnv(gym.Env):
         self.observation_space = spaces.Box(self.low, self.high, shape, dtype=np.float64)
 
     def step(self, action):
-        reward = self.game.score
         kb_key(self.game.controller.up, action == self.TOP)
         kb_key(self.game.controller.left, action == self.LEFT)
         kb_key(self.game.controller.down, action == self.BOTTOM)
         kb_key(self.game.controller.right, action == self.RIGHT)
+        
+        prev_score = self.game.score
         game_update(self.game)
-        reward = pow((self.game.score - reward),2)
+        reward = self.game.score - prev_score
         
         tilearr = strtiles_to_inttiles(self.game.tiles)
         statarr = [self.game.powertime, self.game.combo, self.game.score, self.game.pelletcount]
         ghostarr = ghosts_to_ghostarr(self.game.ghosts)
         gamearr = np.array(statarr + [self.game.pacman.pos.x, self.game.pacman.pos.y] + ghostarr + tilearr)
+        
         if not self.game.running:
             reward = -1000.0
 
-        return gamearr, reward, self.game.pelletcount == 0 or not self.game.running, {}
+        return gamearr, reward, not self.game.running, {}
 
 
-    def reset(self,map="pacman/maps/map.txt"):
-        self.game = new_game(map)
+    def reset(self):
+        self.game = new_game(self.map)
         tilearr = strtiles_to_inttiles(self.game.tiles)
         statarr = [self.game.powertime, self.game.combo, self.game.score, self.game.pelletcount]
         ghostarr = ghosts_to_ghostarr(self.game.ghosts)
@@ -108,9 +111,9 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.utils import set_random_seed
 
-env = pacmanEnv()
-model = PPO("MlpPolicy", env, verbose=1, n_steps=4096)
-model.learn(total_timesteps=1000)
+env = pacmanEnv(map="pacman/maps/lv1.txt")
+model = PPO("MlpPolicy", env, verbose=1, n_steps=128, n_epochs=100)
+model.learn(total_timesteps=25000, progress_bar=True)
 
 def show(stdscr):
     env.stdscr = stdscr
@@ -118,12 +121,21 @@ def show(stdscr):
     key = stdscr.getch()
     while(key != "q"):
         obs = env.reset()
-        for _ in range(10000):
+        finished = False
+        i = 0
+        while i < 1000 and not finished:
+            start_t = time.perf_counter_ns()
             action, _states = model.predict(obs)
-            obs, rewards, dones, info = env.step(action)
+            obs, rewards, finished, info = env.step(action)
             env.render(mode='ascii')
-        stdscr.addstr(0,0,"press q to stop or any other key to continue...")
-        key
+            end_t = time.perf_counter_ns()
+            fps = 10e9/(end_t - start_t)
+            wait_t = 10e9/FPS - (end_t - start_t)
+            if (wait_t > 0):
+                time.sleep(wait_t/10e9)
+
+        # stdscr.addstr(0,0,"press q to stop or any other key to continue...")
+        # key = stdscr.getch()
 
 # NOTE(Elias): start the program
 if __name__ == "__main__":
