@@ -48,6 +48,7 @@ class Game:
     h:int
     tiles:list[list[str]]
     pelletcount: int
+    original_pelletcount: int
     pacman:PhysicsBody
     ghosts:list[Ghost]
 

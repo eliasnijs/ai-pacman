@@ -129,9 +129,9 @@ def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[Ghost], int]:
     return tiles, pacman, ghosts, pelletcount
 
 def new_game(map_path:str) -> Game:
-    tiles, pacman, ghosts ,pellets= loadmap(map_path)
+    tiles, pacman, ghosts, pellets= loadmap(map_path)
     controller = new_controller()
-    return Game(True, controller, 0, 0, 0, len(tiles[0]), len(tiles), tiles, pellets, pacman, ghosts)
+    return Game(True, controller, 0, 0, 0, len(tiles[0]), len(tiles), tiles, pellets, pellets, pacman, ghosts)
 
 def game_update(game:Game) -> None:
 

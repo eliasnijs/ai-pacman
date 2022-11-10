@@ -46,7 +46,7 @@ class pacmanEnv(gym.Env):
         nr_ghosts = len(self.game.ghosts)
 
         # GROOT BAVO MOMENT XD
-        # observation: power time, combo, score, pellet count, pacman x, pacman y, [ghost x y dx dy killable deathtime], [[tile]]
+        # observatio    n: power time, combo, score, pellet count, pacman x, pacman y, [ghost x y dx dy killable deathtime], [[tile]]
         self.low = np.array([0,0,0,0,0,0] + [0,0,-1,-1, False, 0]*len(self.game.ghosts) + [0]*len(self.game.tiles)*len(self.game.tiles[0]))
         self.high = np.array(
             [
