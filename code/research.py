@@ -20,6 +20,7 @@ Environment
 
 Policy Parameters
 - Proximal Policy Optimization (PPO):
+	Hyperparameters:
 	- learning rate
 	- number of steps
 	- batch size
@@ -28,56 +29,50 @@ Policy Parameters
 	- gae lambda
 	- clip range
 	- normalize advantage
+		-
+	- ent coefficients
+		- entropy coefficient for the loss calculation
 	- vf coefficients
+		- value function coefficient for the loss calculation
 	- max grad norm
-	- use sde
-	- sde sample freq		sample a new noise matrix every n steps
-					when  using gSDE
-					(default = -1)
+		- the maximum value for gradient clipping
+		- gradient clipping rescales the gradient as soon as it gets too
+		  large.
+		- default = 0.5
 
   https://stable-baselines3.readthedocs.io/en/master/modules/ppo.htm
 
 """
 
-"""
-Configure Policy
+# Optuna
 
-- At the moment we are using Proximal Policy Optimization... see the following
-	paper
-
-"""
-
-pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv1.txt")
+pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv3.txt")
 model = PPO(
-    "MlpPolicy",
-    pacman_env,
-    learning_rate       = 0.0005,
-    n_steps             = 2048,
-    batch_size          = 2,
-    n_epochs            = 4,
-    gamma               = 0.995,
-    gae_lambda          = 0.96,
-    clip_range          = 0.2,
-    normalize_advantage = True,
-    ent_coef            = 0.05,
-    vf_coef             = 0.5,
-    max_grad_norm       = 0.5,
-    use_sde             = False,
-    sde_sample_freq     = -1,
-    device              = 'auto',
-    verbose             = 1,
+	"MlpPolicy",
+    	pacman_env,
+    	learning_rate       = 0.0003,
+    	n_steps             = 512,
+    	batch_size          = 128,
+    	n_epochs            = 32,
+    	gamma               = 0.99,
+    	gae_lambda          = 0.9,
+    	clip_range          = 0.4,
+    	normalize_advantage = True,
+    	ent_coef            = 0.0,	# default
+    	vf_coef             = 0.5,	# default
+	max_grad_norm       = 0.5,	# default
+	device              = 'auto',	# default
+	verbose             = 1,
+	seed		    = 0
     )
 
 
 """
 Learn
 """
-________________________________________________________________________________
-model.learn(total_timesteps=4096*16, progress_bar=True)
 
-"""
-Show Result
-"""
+model.learn(total_timesteps=4096*32*4, progress_bar=True)
+
 FPS=6
 def show(stdscr):
     pacman_env.screen = stdscr
@@ -99,9 +94,6 @@ def show(stdscr):
         # stdscr.addstr(0,0,"press q to stop or any other key to continue...")
         # key = stdscr.getch()
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Start Program
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 # NOTE(Elias): start the program
 if __name__ == "__main__":
     curses.wrapper(show)

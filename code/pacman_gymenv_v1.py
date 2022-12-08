@@ -1,5 +1,6 @@
 from collections import deque
 import numpy as np
+import random
 
 import gym
 from gym import spaces
@@ -27,16 +28,26 @@ class PacmanEnvironment_v1(gym.Env):
     ACTION_LEFT  = 2
     ACTION_RIGHT = 3
 
-    # returns the observation space corresponding with the game of the
-    # environment
+    def set_random_start_pos(self):
+        return
+        x = -1
+        y = -1
+        while (not (self.game.tiles[y][x] == " " or
+                    self.game.tiles[y][x] == "·")):
+            x = random.randint(0, self.game.w - 1)
+            y = random.randint(0, self.game.h - 1)
+        self.game.pacman.pos.x = x
+        self.game.pacman.pos.y = y
+
+    # returns the observation space corresponding with the game of the environment
     def get_observation(self):
         pacman_x = self.game.pacman.pos.x
         pacman_y = self.game.pacman.pos.y
 
         ghost_data = []
         for ghost in self.game.ghosts:
-            ghost_data.append(pacman_x - ghost.body.pos.x)
-            ghost_data.append(pacman_y - ghost.body.pos.y)
+            ghost_data.append(ghost.body.pos.x)
+            ghost_data.append(ghost.body.pos.y)
             ghost_data.append(ghost.body.dir.x)
             ghost_data.append(ghost.body.dir.y)
 
@@ -44,8 +55,8 @@ class PacmanEnvironment_v1(gym.Env):
         for i,row in enumerate(self.game.tiles):
             for j,cell in enumerate(row):
                 if cell == '·':
-                    pellet_data.append(pacman_x - i)
-                    pellet_data.append(pacman_y - j)
+                    pellet_data.append(i)
+                    pellet_data.append(j)
 
         while (len(pellet_data) < self.game.original_pelletcount*2):
             pellet_data.append(0)
@@ -62,17 +73,16 @@ class PacmanEnvironment_v1(gym.Env):
         self.screen = screen
         self.map = pacmanmap
 
-        game = new_game(self.map)
-        para_cnt_pacman  = 2
-        para_cnt_ghosts  = len(game.ghosts)*4
-        para_cnt_pellets = game.original_pelletcount*2
+        self.game = new_game(self.map)
 
+        para_cnt_pacman  = 2
+        para_cnt_ghosts  = len(self.game.ghosts)*4
+        para_cnt_pellets = self.game.original_pelletcount*2
         para_cnt_total   = para_cnt_pacman + para_cnt_ghosts + para_cnt_pellets
 
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=-1024, high=1024,
-                                            shape=(para_cnt_total,),
-					    dtype=np.float64)
+                                            shape=(para_cnt_total,), dtype=np.float64)
 
     # (nessecary gym function)
     def step(self, action):
@@ -85,9 +95,9 @@ class PacmanEnvironment_v1(gym.Env):
         game_update(self.game)
 
         self.observation = self.get_observation()
-        self.is_done = not self.game.running or self.game.pelletcount == 0
+        self.is_done = not self.game.running #or self.game.pelletcount == 0
 
-        self.reward = self.game.score - prev_score
+        self.reward = 10.0 + self.game.score - prev_score
         if self.is_done and self.game.pelletcount != 0:
             self.reward = -10.0
 
@@ -97,6 +107,7 @@ class PacmanEnvironment_v1(gym.Env):
     # (nessecary gym function)
     def reset(self):
         self.game = new_game(self.map)
+        self.set_random_start_pos()
         self.observation = self.get_observation();
         return self.observation
 
