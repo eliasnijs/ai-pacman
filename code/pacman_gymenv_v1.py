@@ -79,15 +79,15 @@ class PacmanEnvironment_v1(gym.Env):
         kb_key(self.game.controller.down,  action == self.ACTION_DOWN)
         kb_key(self.game.controller.right, action == self.ACTION_RIGHT)
 
+        prev_score = self.game.score
         game_update(self.game)
 
         self.observation = self.get_observation()
-        # self.is_done = self.game.pelletcount == 0 or not self.game.running
-        self.is_done = not self.game.running
+        self.is_done = not self.game.running #or self.game.pelletcount == 0
 
-        self.reward = self.game.score
+        self.reward = self.game.score - prev_score
         if self.is_done and self.game.pelletcount != 0:
-            self.reward = -10000
+            self.reward = -10.0
 
         self.info = {}
         return self.observation, self.reward, self.is_done, self.info
