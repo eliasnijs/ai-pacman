@@ -27,7 +27,8 @@ class PacmanEnvironment_v1(gym.Env):
     ACTION_LEFT  = 2
     ACTION_RIGHT = 3
 
-    # returns the observation space corresponding with the game of the environment
+    # returns the observation space corresponding with the game of the
+    # environment
     def get_observation(self):
         pacman_x = self.game.pacman.pos.x
         pacman_y = self.game.pacman.pos.y
@@ -70,7 +71,8 @@ class PacmanEnvironment_v1(gym.Env):
 
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=-1024, high=1024,
-                                            shape=(para_cnt_total,), dtype=np.float64)
+                                            shape=(para_cnt_total,),
+					    dtype=np.float64)
 
     # (nessecary gym function)
     def step(self, action):
@@ -83,7 +85,7 @@ class PacmanEnvironment_v1(gym.Env):
         game_update(self.game)
 
         self.observation = self.get_observation()
-        self.is_done = not self.game.running #or self.game.pelletcount == 0
+        self.is_done = not self.game.running or self.game.pelletcount == 0
 
         self.reward = self.game.score - prev_score
         if self.is_done and self.game.pelletcount != 0:

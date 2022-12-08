@@ -6,6 +6,47 @@ from pacman_gymenv_v1 import *
 
 from stable_baselines3 import PPO
 
+"""
+PARAMETERS
+
+Environment
+- observation space:
+	v1:	pacman: pacman.x, pacman.y, pacman.dx, pacman.dy
+		ghosts: delta_ghost.x, delta_ghost.dy, ghost.dx, ghost.dy
+		other:	pellet positions
+- reward function:
+	v1:	difference between current score previous score
+		-10.0 if we lost
+
+Policy Parameters
+- Proximal Policy Optimization (PPO):
+	- learning rate
+	- number of steps
+	- batch size
+	- number of epochs
+	- gamma
+	- gae lambda
+	- clip range
+	- normalize advantage
+	- vf coefficients
+	- max grad norm
+	- use sde
+	- sde sample freq		sample a new noise matrix every n steps
+					when  using gSDE
+					(default = -1)
+
+  https://stable-baselines3.readthedocs.io/en/master/modules/ppo.htm
+
+"""
+
+"""
+Configure Policy
+
+- At the moment we are using Proximal Policy Optimization... see the following
+	paper
+
+"""
+
 pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv1.txt")
 model = PPO(
     "MlpPolicy",
@@ -28,9 +69,15 @@ model = PPO(
     )
 
 
+"""
+Learn
+"""
+________________________________________________________________________________
 model.learn(total_timesteps=4096*16, progress_bar=True)
 
-
+"""
+Show Result
+"""
 FPS=6
 def show(stdscr):
     pacman_env.screen = stdscr
@@ -52,6 +99,9 @@ def show(stdscr):
         # stdscr.addstr(0,0,"press q to stop or any other key to continue...")
         # key = stdscr.getch()
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Start Program
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 # NOTE(Elias): start the program
 if __name__ == "__main__":
     curses.wrapper(show)
