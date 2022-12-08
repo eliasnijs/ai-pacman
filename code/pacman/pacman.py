@@ -7,6 +7,14 @@ import curses
 from pacman.base import *
 from pacman.pacman_h import *
 
+# ==============================================================
+# NOTE(Elias): Base
+
+def clamp(lb, v, ub):
+    return min(max(lb, v), ub)
+
+def in_between(lb, v, ub) -> bool:
+    return lb <= v < ub
 
 # ==============================================================
 # NOTE(Elias): Drawing

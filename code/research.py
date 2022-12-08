@@ -6,7 +6,7 @@ from pacman_gymenv_v1 import *
 
 from stable_baselines3 import PPO
 
-pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv0.txt")
+pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv1.txt")
 model = PPO(
     "MlpPolicy",
     pacman_env,
