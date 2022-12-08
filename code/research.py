@@ -8,7 +8,7 @@ from stable_baselines3 import PPO
 
 pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv0.txt")
 model = PPO(
-    "MlpPolicy", 
+    "MlpPolicy",
     pacman_env,
     learning_rate       = 0.0005,
     n_steps             = 2048,
@@ -27,7 +27,9 @@ model = PPO(
     verbose             = 1,
     )
 
+
 model.learn(total_timesteps=4096*16, progress_bar=True)
+
 
 FPS=6
 def show(stdscr):
