@@ -104,37 +104,45 @@ def rand_dir() -> vec2:
 # TODO(Elias): Do this in a better way... color already set on the map?
 
 def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[Ghost], int]:
-    tiles = [list(row) for row in open(path, "r", encoding="utf-8").read().splitlines()]
+    strtiles = [list(row) for row in open(path, "r", encoding="utf-8").read().splitlines()]
+    inttiles = [[TILES.WALL.value for e in row] for row in strtiles]
     ghosts = []
     pacman = None
     colorIndex = 0
     colorLen = len(GHOST_COLORS)
-    maxW = len(max(tiles, key=lambda x: len(x)))
+    maxW = len(max(strtiles, key=lambda x: len(x)))
     pelletcount = 0
 
-    for row, tileRow in enumerate(tiles):
+    for row, tileRow in enumerate(strtiles):
         for col, tile in enumerate(tileRow):
             if tile == "P":
                 if pacman is not None:
                     raise Exception("More than one pacman on the map")
                 pacman = PhysicsBody(vec2(col, row), vec2(1, 0))
-                tiles[row][col] = TILES.EMPTY.value
+                inttiles[row][col] = TILES.PELLET.value
             elif tile == "G":
                 if colorIndex == colorLen:
                     raise Exception("Number of ghosts on the map exceeded the maximum: " + str(colorLen))
                 ghosts.append(Ghost(PhysicsBody(vec2(col, row), vec2(0, 1)), vec2(col, row), False, 0, GHOST_COLORS[colorIndex]))
                 colorIndex += 1
-                tiles[row][col] = TILES.PELLET.value
+                inttiles[row][col] = TILES.PELLET.value
                 pelletcount+=1
-            elif tile == TILES.PELLET.value:
+            elif tile == "0":
+                inttiles[row][col] = TILES.POWER.value
+            elif tile == "·":
+                inttiles[row][col] = TILES.PELLET.value
                 pelletcount+=1
+            elif tile == " ":
+                inttiles[row][col] = TILES.EMPTY.value
 
         if len(tileRow) < maxW:
             for _ in range(maxW - len(tileRow)):
+                print("appending")
                 tileRow.append(" ")
+
     if pacman is None:
         raise Exception("No pacman (symbol = 'P') found on the map")
-    return tiles, pacman, ghosts, pelletcount
+    return inttiles, pacman, ghosts, pelletcount
 
 def new_game(map_path:str) -> Game:
     tiles, pacman, ghosts, pellets= loadmap(map_path)
@@ -209,17 +217,22 @@ def game_update(game:Game) -> None:
 
 def game_render(stdscr, game: Game) -> None:
     # NOTE(Elias): Render map
+    tilestr = " "
     for i, row in enumerate(game.tiles):
         for j, tile in enumerate(row):
             if tile == TILES.PELLET.value:
                 set_color(stdscr, curses.COLOR_YELLOW)
+                tilestr = "·"
             elif tile == TILES.POWER.value:
                 set_color(stdscr, curses.COLOR_WHITE)
+                tilestr = "0"
             elif tile == TILES.WALL.value:
                 set_color(stdscr, curses.COLOR_BLUE)
+                tilestr = "#"
             else:
+                tilestr = " "
                 set_color(stdscr, curses.COLOR_BLACK)
-            stdscr.addstr(i, 2 * j, tile + " ")
+            stdscr.addstr(i, 2 * j, tilestr + " ")
 
     # NOTE(Elias): Render pacman
     if game.powertime != 0:

@@ -60,8 +60,8 @@ class Game:
     score: int
     w:int
     h:int
-    tiles:list[list[str]]
-    pelletcount: int
+    tiles:list[list[int]]
+    pelletcount:int
     original_pelletcount: int
     pacman:PhysicsBody
     ghosts:list[Ghost]
@@ -77,7 +77,7 @@ DIRS         = [vec2(0,-1), vec2(1, 0), vec2(0,1), vec2(-1,0)]
 GHOST_COLORS = [curses.COLOR_RED, curses.COLOR_CYAN, curses.COLOR_MAGENTA, curses.COLOR_GREEN]
 
 class TILES(Enum):
-    EMPTY   :str = ' '
-    WALL    :str = '#'
-    PELLET  :str = '·'
-    POWER   :str = '0'
+    EMPTY   :int = 0
+    WALL    :int = 1
+    PELLET  :int = 2
+    POWER   :int = 3
