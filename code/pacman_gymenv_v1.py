@@ -62,11 +62,11 @@ class PacmanEnvironment_v1(gym.Env):
 
 		self.action_space = spaces.Discrete(4)
 		self.observation_space = spaces.Box(low=-256, high=256,
-				      shape=(para_cnt_total,), dtype=np.int8)
+				      shape=(para_cnt_total,), dtype=np.float64)
 
 	# (nessecary gym function)
 	def step(self, action):
-		kb_key(self.game.controller.up,action == self.ACTION_UP)
+		kb_key(self.game.controller.up,	   action == self.ACTION_UP)
 		kb_key(self.game.controller.left,  action == self.ACTION_LEFT)
 		kb_key(self.game.controller.down,  action == self.ACTION_DOWN)
 		kb_key(self.game.controller.right, action == self.ACTION_RIGHT)
@@ -78,7 +78,10 @@ class PacmanEnvironment_v1(gym.Env):
 		self.is_done = (not self.game.running
 			  or self.game.pelletcount == 0)
 
-		self.reward = -1.0 + self.game.score - prev_score
+		self.reward = self.game.score
+		if (self.game.score == prev_score):
+			self.reward = -1
+
 		if self.is_done and self.game.pelletcount != 0:
 			self.reward = -20.0
 		elif self.is_done and self.game.pelletcount == 0:
@@ -90,7 +93,7 @@ class PacmanEnvironment_v1(gym.Env):
 	# (nessecary gym function)
 	def reset(self):
 		self.game = new_game(self.map)
-		self.set_random_start_pos()
+		# self.set_random_start_pos()
 		self.observation = self.get_observation();
 		return self.observation
 
@@ -101,6 +104,3 @@ class PacmanEnvironment_v1(gym.Env):
 			game_render(self.screen, self.game)
 		else:
 			raise NotImplementedError()
-
-
-

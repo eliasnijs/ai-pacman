@@ -129,7 +129,7 @@ def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[Ghost], int]:
                 pelletcount+=1
             elif tile == "0":
                 inttiles[row][col] = TILES.POWER.value
-            elif tile == "·":
+            elif tile == "·" or tile == ".":
                 inttiles[row][col] = TILES.PELLET.value
                 pelletcount+=1
             elif tile == " ":

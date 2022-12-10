@@ -21,11 +21,10 @@ def show(stdscr, fps):
 			if (wait_t > 0):
 				time.sleep(wait_t/10e9)
 
-# NOTE(Elias): start the program
 if __name__ == "__main__":
 	# Optuna
 	n_cpu = 6
-	pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv3.txt")
+	pacman_env = PacmanEnvironment_v1(pacmanmap="pacman/maps/lv5.txt")
 	# check_env(pacman_env)
 	env = SubprocVecEnv([lambda: pacman_env for i in range(n_cpu)])
 	model = PPO(
@@ -46,6 +45,5 @@ if __name__ == "__main__":
 		verbose             = 1,
 		seed		    = 0
 	    )
-	model.learn(total_timesteps=4096*32, progress_bar=True)
+	model.learn(total_timesteps=4096, progress_bar=True)
 	curses.wrapper(show, 8)
-
