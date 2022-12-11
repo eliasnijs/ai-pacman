@@ -4,7 +4,6 @@ import random as r
 import time
 import curses
 
-from pacman.base import *
 from pacman.pacman_h import *
 
 # ==============================================================

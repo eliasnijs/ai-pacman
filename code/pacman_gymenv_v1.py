@@ -7,19 +7,6 @@ from gym import spaces
 
 from pacman.pacman import *
 
-"""
-Pacman Ai - The Environment - v1
-
-This environment does not support eating ghosts. The challenge
-here is to learn to eat pellets and to not get killed
-by the ghosts.
-
-The observation space:
-- pacman.x, pacman.y, pacman.dx, pacman.dy
-- for ghost in all ghosts: delta_ghost.x, delta_ghost.y, ghost.dx, ghost.dy
-- pellet positions
-"""
-
 class PacmanEnvironment_v1(gym.Env):
 	metadata = {'render.modes': ['human']}
 
@@ -75,13 +62,13 @@ class PacmanEnvironment_v1(gym.Env):
 		game_update(self.game)
 
 		self.observation = self.get_observation()
-		self.is_done = (not self.game.running
-			  or self.game.pelletcount == 0)
+		self.is_done = (not self.game.running or self.game.pelletcount == 0)
 
-		self.reward = self.game.score
+		self.reward = self.game.score - prev_score
 		if (self.game.score == prev_score):
 			self.reward = -1
 
+		self.reward = 2
 		if self.is_done and self.game.pelletcount != 0:
 			self.reward = -20.0
 		elif self.is_done and self.game.pelletcount == 0:

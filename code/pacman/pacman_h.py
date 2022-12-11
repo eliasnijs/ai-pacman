@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
 import curses
-from pacman.base import *
 
 # ==============================================================
 # NOTE(Elias): Base

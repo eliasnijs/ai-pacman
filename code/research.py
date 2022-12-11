@@ -13,38 +13,37 @@ import optuna
 
 from pacman_gymenv_v1 import PacmanEnvironment_v1
 
-# -----------------------------------------------------------------------------
+# _____________________________________________________________________________
 # Configuration
 
 # General configuration
-N_CPU			= 4
-MAP			= "pacman/maps/lv5.txt"
+MAP			= "pacman/maps/lv3.txt"
 FPS			= 8
+N_CPU			= 8
+POLICY			= "MlpPolicy"
 
 # Optuna hyperparameter tuning configuration
-TUNING_LEARNINGRATE_LB	= 1e-5
-TUNING_LEARNINGRATE_UB	= 1e-2
-TUNING_EPOCHS_LB	= 1
-TUNING_EPOCHS_UB	= 32
-TUNING_GAMMA_LB		= 0.8
-TUNING_GAMMA_UB		= 0.99
-TUNING_ENTCOEF_LB	= 1e-5
-TUNING_ENTCOEF_UB	= 1e-1
+TUNING_HORIZON		= [32, 5000]
+TUNING_MINIBATCH_RANGE	= [4, 4096]
+TUNING_EPOCHS		= [3, 30]
+TUNING_CLIP_RANGE	= [0.1, 0.3]
+TUNING_GAMMA		= [0.8, 0.9997]
+TUNING_GAE		= [0.9, 1.0]
+TUNING_VF		= [0.5, 1.0]
+TUNING_EF		= [0.0, 0.01]
+TUNING_LEARNINGRATE	= [5e-6, 0.003]
 
-TUNING_STEPS		= 1#64
-TUNING_TIMESTEPS	= 1#4096*2*4
+TUNING_STEPS		= 32
+TUNING_TIMESTEPS	= 4096*8
 
 # Final training configuration
-MODEL_POLICY		= "MlpPolicy"
-MODEL_TIMESTEPS		= 1#4096*32*8
+MODEL_TIMESTEPS		= 4096*32*8
 
 # Environment configuration
 PACMAN_ENV = PacmanEnvironment_v1(pacmanmap=MAP)
 
-# -----------------------------------------------------------------------------
+# _____________________________________________________________________________
 # The Program
-
-
 
 def show(stdscr, model):
 	stdscr.addstr(0,0,"press q to stop or any other key to continue...")
@@ -63,25 +62,41 @@ def show(stdscr, model):
 			if (wait_t > 0):
 				time.sleep(wait_t/10e9)
 
+
 def objective_ppo(trial):
 	verbose		= 0
 	seed		= 0
-
-	learning_rate	= trial.suggest_float('learning_rate', TUNING_LEARNINGRATE_LB, TUNING_LEARNINGRATE_LB)
-	n_epochs	= trial.suggest_int('n_epochs', TUNING_EPOCHS_LB, TUNING_EPOCHS_UB)
-	gamma		= trial.suggest_float('gamma', TUNING_GAMMA_LB, TUNING_GAMMA_UB)
-	ent_coef	= trial.suggest_float('ent_coef', TUNING_ENTCOEF_LB, TUNING_ENTCOEF_UB)
+	n_steps		= trial.suggest_int(	'n_steps',		TUNING_HORIZON[0],		TUNING_HORIZON[1])
+	batch_size	= trial.suggest_int(	'batch_size',		TUNING_MINIBATCH_RANGE[0],	TUNING_MINIBATCH_RANGE[1])
+	n_epochs	= trial.suggest_int(	'n_epochs',		TUNING_EPOCHS[0],		TUNING_EPOCHS[1])
+	clip_range	= trial.suggest_float(	'clip_range',		TUNING_CLIP_RANGE[0],		TUNING_CLIP_RANGE[1]);
+	gamma		= trial.suggest_float(	'gamma',		TUNING_GAMMA[0],		TUNING_GAMMA[1])
+	gae_labmda	= trial.suggest_float(	'gae_lambda',		TUNING_GAE[0],			TUNING_GAE[1])
+	vf_coef		= trial.suggest_float(	'vf_coef',		TUNING_VF[0],			TUNING_VF[1])
+	ent_coef	= trial.suggest_float(	'ent_coef',		TUNING_EF[0],			TUNING_EF[1])
+	learning_rate	= trial.suggest_float(	'learning_rate',	TUNING_LEARNINGRATE[0],		TUNING_LEARNINGRATE[1])
 
 	env = SubprocVecEnv([lambda: Monitor(PACMAN_ENV) for i in range(N_CPU)])
 
-	model = PPO(MODEL_POLICY, env, learning_rate=learning_rate,
-	     ent_coef=ent_coef, gamma=gamma, n_epochs=n_epochs,
-	     verbose = verbose, seed = seed)
+	model = PPO(
+		policy		= POLICY,
+		env		= env,
+		learning_rate	= learning_rate,
+		n_steps		= n_steps,
+		batch_size	= batch_size,
+		n_epochs	= n_epochs,
+		gamma		= gamma,
+		gae_lambda	= gae_labmda,
+		clip_range	= clip_range,
+		ent_coef	= ent_coef,
+		vf_coef		= vf_coef,
+		verbose		= 0,
+		seed		= 0,
+		)
 	model.learn(total_timesteps=TUNING_TIMESTEPS, progress_bar=True)
 
 	reward_mean, _ = evaluate_policy(model, env)
 	return reward_mean
-
 
 if __name__ == "__main__":
 	# Tuning of the hyperparameters using 'Optuna'
@@ -93,11 +108,15 @@ if __name__ == "__main__":
 	print(study.best_params)
 	print(study.best_value)
 
+	f = open("optuna_results.txt", "w")
+	f.write(str(study.best_params))
+	f.close()
+
 	# Use the parameters from optuna to train for a longer time and
 	# visiualise the result
 	env = SubprocVecEnv([lambda: Monitor(PACMAN_ENV) for i in range(N_CPU)])
 
-	model = PPO(MODEL_POLICY, env, **study.best_params)
+	model = PPO(POLICY, env, **study.best_params)
 	model.learn(MODEL_TIMESTEPS, progress_bar=True)
 
 	curses.wrapper(show, model)
