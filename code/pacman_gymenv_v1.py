@@ -28,14 +28,14 @@ class PacmanEnvironment_v1(gym.Env):
 	# returns the observation space corresponding with the game of the
 	# environment
 	def get_observation(self):
-		pacman_data = np.array([self.game.pacman.pos.x,
-			  self.game.pacman.pos.y])
+		pacman_data = np.array([self.game.pacman.pos.x, self.game.pacman.pos.y])
 		ghost_data = np.zeros(len(self.game.ghosts)*2)
 		for i,ghost in enumerate(self.game.ghosts):
 			ghost_data[i*2] = ghost.body.pos.x
 			ghost_data[i*2 + 1] = ghost.body.pos.y
 		map_data = np.array(self.game.tiles).flatten()
 		return np.concatenate((pacman_data, ghost_data, map_data))
+
 
 	# (nessecary gym function)
 	def __init__(self, screen=None, pacmanmap="pacman/maps/lv1.txt"):
@@ -44,8 +44,8 @@ class PacmanEnvironment_v1(gym.Env):
 		self.map = pacmanmap
 		self.game = new_game(self.map)
 
-		para_cnt_total = (2 + len(self.game.ghosts)*2 + self.game.h *
-		    self.game.w)
+		para_cnt_total = (2 + len(self.game.ghosts)*2
+		    + self.game.h * self.game.w)
 
 		self.action_space = spaces.Discrete(4)
 		self.observation_space = spaces.Box(low=-256, high=256,
@@ -65,14 +65,10 @@ class PacmanEnvironment_v1(gym.Env):
 		self.is_done = (not self.game.running or self.game.pelletcount == 0)
 
 		self.reward = self.game.score - prev_score
-		if (self.game.score == prev_score):
-			self.reward = -1
-
-		self.reward = 2
 		if self.is_done and self.game.pelletcount != 0:
-			self.reward = -20.0
+			self.reward = -200.0
 		elif self.is_done and self.game.pelletcount == 0:
-			self.reward = 20.0
+			self.reward = 200.0
 
 		self.info = {}
 		return self.observation, self.reward, self.is_done, self.info
