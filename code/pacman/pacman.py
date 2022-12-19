@@ -4,13 +4,10 @@ import random as r
 import time
 import curses
 
-from pacman.pacman_h import *
+from pacman_h import *
 
 # ==============================================================
 # NOTE(Elias): Base
-
-def clamp(lb, v, ub):
-    return min(max(lb, v), ub)
 
 def in_between(lb, v, ub) -> bool:
     return lb <= v < ub
@@ -92,10 +89,6 @@ def handle_touch(game:Game, ghost: Ghost) -> bool:
             game.combo *= 2
         return False
     return True
-
-def rand_dir() -> vec2:
-    return DIRS[r.randint(0, 3)]
-
 
 # =======================================================
 # NOTE(Elias): Game
@@ -264,7 +257,7 @@ def pacman(stdscr) -> int:
 
     # NOTE(Elias): initialisation
     stdscr.nodelay(True) # NOTE(Elias): configure curses keyboard input
-    game:Game = new_game("maps/map.txt")
+    game:Game = new_game("maps/lv2.txt")
     framecnt = 0
 
     # NOTE(Elias): running
@@ -294,22 +287,6 @@ def pacman(stdscr) -> int:
 
     return framecnt
 
-def pacman_no_ui() -> int:
-    game:Game = new_game("maps/map.txt")
-    framecnt = 0
-    while game.running:
-        start_t = time.perf_counter_ns()
-
-        game_update(game)
-
-        end_t = time.perf_counter_ns()
-        fps = 10e9/(end_t - start_t)
-
-        framecnt += 1
-    return framecnt
-
-
 # NOTE(Elias): start the program
 if __name__ == "__main__":
     curses.wrapper(pacman)
-
