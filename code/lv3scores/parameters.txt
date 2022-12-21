@@ -1,0 +1,5 @@
+TUNING_STEPS		= 32
+TUNING_TIMESTEPS	= 4096*8
+
+# Final training configuration
+MODEL_TIMESTEPS		= 4096*64*4

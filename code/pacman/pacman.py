@@ -4,7 +4,7 @@ import random as r
 import time
 import curses
 
-from pacman_h import *
+from pacman.pacman_h import *
 
 # ==============================================================
 # NOTE(Elias): Base
@@ -111,7 +111,7 @@ def loadmap(path: str) -> tuple[list[list[str]], PhysicsBody, list[Ghost], int]:
                 if pacman is not None:
                     raise Exception("More than one pacman on the map")
                 pacman = PhysicsBody(vec2(col, row), vec2(1, 0))
-                inttiles[row][col] = TILES.PELLET.value
+                inttiles[row][col] = TILES.EMPTY.value
             elif tile == "G":
                 if colorIndex == colorLen:
                     raise Exception("Number of ghosts on the map exceeded the maximum: " + str(colorLen))

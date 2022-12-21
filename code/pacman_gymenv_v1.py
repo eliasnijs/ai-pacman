@@ -16,8 +16,8 @@ class PacmanEnvironment_v1(gym.Env):
 	ACTION_RIGHT = 3
 
 	def set_random_start_pos(self):
-		x = -1
-		y = -1
+		x = random.randint(0, self.game.w - 1)
+		y = random.randint(0, self.game.h - 1)
 		while (not (self.game.tiles[y][x] == TILES.EMPTY.value or
 	      self.game.tiles[y][x] == TILES.PELLET.value)):
 			x = random.randint(0, self.game.w - 1)
@@ -76,8 +76,8 @@ class PacmanEnvironment_v1(gym.Env):
 	# (nessecary gym function)
 	def reset(self):
 		self.game = new_game(self.map)
-		# self.set_random_start_pos()
-		self.observation = self.get_observation();
+		#self.set_random_start_pos()
+		self.observation = self.get_observation()
 		return self.observation
 
 	# (nessecary gym function)
