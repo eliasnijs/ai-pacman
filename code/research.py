@@ -17,7 +17,7 @@ from pacman_gymenv_v1 import PacmanEnvironment_v1
 # Configuration
 
 # General configuration
-MAP			= "pacman/maps/lv4.txt"
+MAP			= "pacman/maps/lv2.txt"
 FPS			= 8
 N_CPU			= 8
 POLICY			= "MlpPolicy"
@@ -35,11 +35,11 @@ TUNING_VF		= [0.5,		1.0		]
 TUNING_EF		= [0.0,		0.01		]
 TUNING_LEARNINGRATE	= [5e-6,	0.003		]
 
-TUNING_STEPS		= 32
-TUNING_TIMESTEPS	= 4096*8*4
+TUNING_STEPS		= 64
+TUNING_TIMESTEPS	= 4096*2
 
 # Final training configuration
-MODEL_TIMESTEPS		= 4096*64*4*2
+MODEL_TIMESTEPS		= 4096*32*8
 
 # Environment configuration
 PACMAN_ENV = PacmanEnvironment_v1(pacmanmap=MAP)
@@ -77,13 +77,13 @@ def show(stdscr, model):
 def objective_ppo(trial):
 	verbose		= 0
 	seed		= 0
-	n_steps		= trial.suggest_int(	'n_steps',		TUNING_HORIZON[0],		TUNING_HORIZON[1])
+	# n_steps	= trial.suggest_int(	'n_steps',		TUNING_HORIZON[0],		TUNING_HORIZON[1])
 	# batch_size	= trial.suggest_int(	'batch_size',		TUNING_MINIBATCH_RANGE[0],	TUNING_MINIBATCH_RANGE[1])
 	n_epochs	= trial.suggest_int(	'n_epochs',		TUNING_EPOCHS[0],		TUNING_EPOCHS[1])
 	clip_range	= trial.suggest_float(	'clip_range',		TUNING_CLIP_RANGE[0],		TUNING_CLIP_RANGE[1]);
 	gamma		= trial.suggest_float(	'gamma',		TUNING_GAMMA[0],		TUNING_GAMMA[1])
 	# gae_labmda	= trial.suggest_float(	'gae_lambda',		TUNING_GAE[0],			TUNING_GAE[1])
-	# vf_coef		= trial.suggest_float(	'vf_coef',		TUNING_VF[0],			TUNING_VF[1])
+	# vf_coef	= trial.suggest_float(	'vf_coef',		TUNING_VF[0],			TUNING_VF[1])
 	ent_coef	= trial.suggest_float(	'ent_coef',		TUNING_EF[0],			TUNING_EF[1])
 	learning_rate	= trial.suggest_float(	'learning_rate',	TUNING_LEARNINGRATE[0],		TUNING_LEARNINGRATE[1])
 
@@ -93,14 +93,14 @@ def objective_ppo(trial):
 		policy		= POLICY,
 		env		= env,
 		learning_rate	= learning_rate,
-		n_steps		= n_steps,
+		# n_steps	= n_steps,
 		# batch_size	= batch_size,
 		n_epochs	= n_epochs,
 		gamma		= gamma,
 		# gae_lambda	= gae_labmda,
 		clip_range	= clip_range,
 		ent_coef	= ent_coef,
-		# vf_coef		= vf_coef,
+		# vf_coef	= vf_coef,
 		verbose		= 0,
 		seed		= 0,
 		)
