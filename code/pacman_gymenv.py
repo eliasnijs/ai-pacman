@@ -65,6 +65,10 @@ class PacmanEnvironment(gym.Env):
 		self.is_done = (not self.game.running or self.game.pelletcount == 0)
 
 		self.reward = self.game.score - prev_score
+
+		if self.game.score == prev_score:
+			self.reward = -1
+
 		if self.is_done and self.game.pelletcount != 0:
 			self.reward = -200.0
 		elif self.is_done and self.game.pelletcount == 0:
