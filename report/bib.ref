@@ -1,0 +1,23 @@
+%k PPO
+%0 Journal Article
+%T Proximal policy optimization algorithms
+%A Schulman, John
+%A Wolski, Filip
+%A Dhariwal, Prafulla
+%A Radford, Alec
+%A Klimov, Oleg
+%J arXiv preprint arXiv:1707.06347
+%D 2017
+
+%k TRPO 
+%0 Conference Proceedings
+%T Trust region policy optimization
+%A Schulman, John
+%A Levine, Sergey
+%A Abbeel, Pieter
+%A Jordan, Michael
+%A Moritz, Philipp
+%B International conference on machine learning
+%P 1889-1897
+%D 2015
+%I PMLR
