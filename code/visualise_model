@@ -1,0 +1,45 @@
+#!/bin/python3
+
+import sys
+from stable_baselines3 import PPO
+import time
+import curses
+
+from pacman_gymenv import PacmanEnvironment
+from pacman.pacman import *
+
+FPS   = 8
+MAP   = None
+MODEL = None
+
+def run(stdscr):
+    global MODEL, MAP
+
+    model = MODEL
+    env = PacmanEnvironment(pacmanmap = MAP)
+    env.screen = stdscr
+
+    finished = False
+    obs = env.reset()
+    while not finished:
+        start_t = time.perf_counter_ns()
+        action, _states = model.predict(obs)
+        obs, rewards, finished, info = env.step(action)
+        env.render(mode='human')
+        wait_t = 10e9/FPS - (time.perf_counter_ns() - start_t)
+        if (wait_t > 0):
+            time.sleep(wait_t/10e9)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("wrong number of arguments")
+        print("./visualise_model <model file> <map>")
+        exit(0)
+    MODEL = PPO.load(sys.argv[1])
+    if MODEL == None:
+        print("failed to load model")
+        exit(0)
+    MAP = sys.argv[2]
+    curses.wrapper(run)
+
