@@ -1,0 +1,7 @@
+   win percentage:                100.0%
+  score mean:                      70.0
+  score std:                       0.00
+  score median:                    70.0
+  time mean:                  7.0078125
+  time std:                        0.09
+  time median:                     70.0

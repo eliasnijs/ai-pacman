@@ -21,3 +21,65 @@
 %P 1889-1897
 %D 2015
 %I PMLR
+
+%k DQN
+%0 Journal Article
+%T Playing atari with deep reinforcement learning
+%A Mnih, Volodymyr
+%A Kavukcuoglu, Koray
+%A Silver, David
+%A Graves, Alex
+%A Antonoglou, Ioannis
+%A Wierstra, Daan
+%A Riedmiller, Martin
+%J arXiv preprint arXiv:1312.5602
+%D 2013
+
+%k stable-baselines3
+%0 Journal Article
+%A Antonin Raffin
+%A Ashley Hill
+%A Adam Gleave
+%A Anssi Kanervisto
+%A Maximilian Ernestus
+%A Noah Dormann
+%T Stable-Baselines3: Reliable Reinforcement Learning Implementations
+%J Journal of Machine Learning Research
+%D 2021
+%V 22
+%R 268
+%P 1-8
+%O http://jmlr.org/papers/v22/20-1364.html
+
+%k optuna_2019
+%T Optuna: A Next-generation Hyperparameter Optimization Framework
+%A Akiba
+%A Takuya
+%A Sano
+%A Shotaro
+%A Yanase
+%A Toshihiko
+%A Ohta
+%A Takeru
+%A Koyama
+%A Masanori
+%B Proceedings of the 25rd {ACM} {SIGKDD} International Conference on Knowledge Discovery and Data Mining
+%D 2019
+
+%0 Journal Article
+%T Openai gym
+%A Brockman, Greg
+%A Cheung, Vicki
+%A Pettersson, Ludwig
+%A Schneider, Jonas
+%A Schulman, John
+%A Tang, Jie
+%A Zaremba, Wojciech
+%J arXiv preprint arXiv:1606.01540
+%D 2016
+
+%0 Journal Article
+%T Notes on kullback-leibler divergence and likelihood
+%A Shlens, Jonathon
+%J arXiv preprint arXiv:1404.2000
+%D 2014
