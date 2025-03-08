@@ -1,3 +1,4 @@
 *.ipynb linguist-detectable=false
 *.ms linguist-detectable=false
 *.ps linguist-detectable=false
+report/* linguist-documentation=true
